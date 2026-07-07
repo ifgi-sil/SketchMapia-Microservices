@@ -347,7 +347,7 @@ def find_juncs_from_geojson(geojson_dict, prefix, valid_ids, id_property='id', t
                             coord_map[key].append(other_id)
                         break  # found a matching segment on this road
 
-    # --- 4. junction detection (unchanged) ---
+    # --- 4. junction detection ---
     junctions = {}
     jb_id = 0
     for (rx, ry), connected_roads in coord_map.items():
@@ -356,7 +356,7 @@ def find_juncs_from_geojson(geojson_dict, prefix, valid_ids, id_property='id', t
             junctions[junc_key] = [(rx, ry), connected_roads]
             jb_id += 1
 
-    # --- 5. MBR building (unchanged) ---
+    # --- 5. MBR building  ---
     mbr_dict = {}
     for junc_key in junctions:
         r = 1.0

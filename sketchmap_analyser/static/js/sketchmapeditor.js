@@ -2307,6 +2307,36 @@ if (commonPair) {
             }, 10);
         }
     }
+        function openAnalyseModal() {
+        document.getElementById('analyseModal').style.display = 'flex';
+    }
+
+    function closeAnalyseModal() {
+        document.getElementById('analyseModal').style.display = 'none';
+    }
+
+    async function runAnalysis() {
+        // Completeness is hardcoded true regardless of DOM state — the checkbox
+        // is disabled in the UI, but this is a safety net against devtools tampering.
+        const completeness = true;
+        const accuracy = document.getElementById('chkAccuracy').checked;
+        const buildingsGMDA = document.getElementById('chkBuildingsGMDA').checked;
+        const junctionsGMDA = document.getElementById('chkJunctionsGMDA').checked;
+
+        closeAnalyseModal();
+
+        // analyseMultiMap populates allGenBaseMap, which will then be used by GMDA calculators 
+        // so, it must be finished first then the GMDA will run.
+        await analyseMultiMap(completeness, accuracy);
+
+        if (buildingsGMDA) {
+            await computeGMDAFromAllGenBaseMap();
+        }
+
+        if(junctionsGMDA){
+            await computeJunctionGMDAFromAllGenBaseMap();
+        }
+    }
 
     // Hide dropdowns when clicking outside
     document.addEventListener('click', function(event) {

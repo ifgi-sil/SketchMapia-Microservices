@@ -21,6 +21,7 @@ var orderedGenResult = [];
 var orderedCompResult = [];
 var rows = [];
 var cells = [];
+var sketchMapRowIndex = {};
 var numbOfSM;
 var tempallOriginalSketchMaps;
 var streetCountBeforeGen = 0;
@@ -176,7 +177,7 @@ async function computeGMDAFromAllGenBaseMap() {
     }
     $('#loading-spinner').hide();
     $('#summary_result_div').prop("style", 
-        "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+        "height:500px; width:1200px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateGMDAResults();
 }
 
@@ -286,7 +287,7 @@ async function computeJunctionGMDAFromAllGenBaseMap() {
 
     $('#loading-spinner').hide();
     $('#summary_result_div').prop("style",
-        "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+        "height:500px; width:1200px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateGMDAResults();
 }
 
@@ -518,8 +519,8 @@ if (BooleanEditSketchMode){
     var resultTable = document.getElementById("resultRows");
     for (var i = 0; i<numbOfSM-3;i++){
         rows[i] = resultTable.insertRow(i);
-        cells[i] = new Array(4)
-        for (var j=0;j<4;j++){
+        cells[i] = new Array(16)
+        for (var j=0;j<16;j++){
             cells[i][j]=rows[i].insertCell(j);
         }
    }
@@ -543,6 +544,7 @@ if (BooleanEditSketchMode){
         streetCountBeforeGen = 0;
         lmCountBeforeGen = 0;
         currentsketchMap = Object.keys(tempallOriginalSketchMaps)[i];
+        sketchMapRowIndex[currentsketchMap] = index;
 
             GenBaseMap = null;
         ProcSketchMap = null;
@@ -641,7 +643,7 @@ try {
 
     const fixedIndex = index;
 
-    $('#summary_result_div').prop("style", "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    $('#summary_result_div').prop("style", "height:500px; width:1200px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
 
     const GenBasemapjson = await generalizedMapExtract(
       fixedIndex,
@@ -1450,37 +1452,34 @@ function resolveGenId(rawId, lookups) {
 }
 
 // Populate and toggle the GMDA summary panel from genResultArray
-// Populate and toggle the GMDA summary panel from genResultArray
-function populateGMDAResults() {
-    const tbody = document.getElementById('gmda_rows');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    const keys = Object.keys(genResultArray || {});
-    if (keys.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">No GMDA results available</td></tr>';
-    } else {
-        keys.forEach(function(sketchmap) {
-            const g = genResultArray[sketchmap] || {};
-            const tr = document.createElement('tr');
-            
-            // Dynamically fall back to Junc_ keys if the standard keys are missing
-            const canOrg  = g.CanOrg  !== undefined ? g.CanOrg  : (g.Junc_CanOrg  || 0);
-            const canAcc  = g.CanAcc  !== undefined ? g.CanAcc  : (g.Junc_CanAcc  || 0);
-            const scaBias = g.ScaBias !== undefined ? g.ScaBias : (g.Junc_ScaBias || 0);
-            const distAcc = g.DistAcc !== undefined ? g.DistAcc : (g.Junc_DistAcc || 0);
-            const rotBias = g.RotBias !== undefined ? g.RotBias : (g.Junc_RotBias || 0);
-            const angAcc  = g.AngAcc  !== undefined ? g.AngAcc  : (g.Junc_AngAcc  || 0);
 
-            tr.innerHTML = '<td>' + sketchmap + '</td>' +
-                           '<td>' + canOrg + '</td>' +
-                           '<td>' + canAcc + '</td>' +
-                           '<td>' + scaBias + '</td>' +
-                           '<td>' + distAcc + '</td>' +
-                           '<td>' + rotBias + '</td>' +
-                           '<td>' + angAcc + '</td>';
-            tbody.appendChild(tr);
-        });
-    }
-    const panel = document.getElementById('gmda_summary');
-    if (panel) panel.style.display = (panel.style.display === 'none' ? 'block' : 'none');
+function populateGMDAResults() {
+
+    const keys = Object.keys(genResultArray || {});
+    keys.forEach(function(sketchmap) {
+        const rowIndex = sketchMapRowIndex[sketchmap];
+        if (rowIndex === undefined || !cells[rowIndex]) return;
+
+        const g = genResultArray[sketchmap] || {};
+
+        // Buildings GMDA -> columns 4-9 (only written if actually computed)
+        if (g.CanOrg !== undefined) {
+            cells[rowIndex][4].innerHTML = g.CanOrg;
+            cells[rowIndex][5].innerHTML = g.CanAcc;
+            cells[rowIndex][6].innerHTML = g.ScaBias;
+            cells[rowIndex][7].innerHTML = g.DistAcc;
+            cells[rowIndex][8].innerHTML = g.RotBias;
+            cells[rowIndex][9].innerHTML = g.AngAcc;
+        }
+
+        // Junctions GMDA -> columns 10-15 (only written if actually computed)
+        if (g.Junc_CanOrg !== undefined) {
+            cells[rowIndex][10].innerHTML = g.Junc_CanOrg;
+            cells[rowIndex][11].innerHTML = g.Junc_CanAcc;
+            cells[rowIndex][12].innerHTML = g.Junc_ScaBias;
+            cells[rowIndex][13].innerHTML = g.Junc_DistAcc;
+            cells[rowIndex][14].innerHTML = g.Junc_RotBias;
+            cells[rowIndex][15].innerHTML = g.Junc_AngAcc;
+        }
+    });
 }
