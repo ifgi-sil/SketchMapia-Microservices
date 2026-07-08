@@ -63,7 +63,7 @@ This service outputs a dictionary containing the following core spatial metrics:
 | **DistAcc** | Distance error magnitude | ❌ No |
 | **ScaBias** | Expansion (+) / compression (−) | — |
 | **AngAcc** | Angular deviation accuracy | ❌ No |
-| **RotBias** | Systematic rotation (CW + / CCW −) | — |
+| **RotBias** | Systematic rotation (ClockWise + / CounterClockWise −) | — |
 
 1. **Canonical Organization (CanOrg)**:
 Measures the overall spatial organization and topological accuracy (N/S/E/W relationships). It uses the total possible landmark pairs ($N_{TL}$) as the denominator, intentionally penalizing the score for any omitted/forgotten landmarks.
