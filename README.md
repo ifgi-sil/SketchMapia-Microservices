@@ -58,8 +58,8 @@ This service outputs a dictionary containing the following core spatial metrics:
 
 | Metric | Measures | Penalizes omissions? |
 | :--- | :--- | :---: |
-| **CanOrg** | Topological organization (N/S/E/W) | ✅ Yes ($N_{TL}$) |
-| **CanAcc** | Spatial layout accuracy | ❌ No ($N_{DL}$) |
+| **CanOrg** | Topological organization (N/S/E/W) |  ❌No ($N_{TL}$ + 0, if Omitted) |
+| **CanAcc** | Spatial layout accuracy | ❌ No ($N_{DL}$ + 0, if Omitted) |
 | **DistAcc** | Distance error magnitude | ❌ No |
 | **ScaBias** | Expansion (+) / compression (−) | — |
 | **AngAcc** | Angular deviation accuracy | ❌ No |
