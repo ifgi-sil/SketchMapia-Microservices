@@ -126,8 +126,6 @@ download = true;
 
     console.log("Download finished");
 
-    await computeGMDAFromAllGenBaseMap();
-
   } catch (err) {
 
     console.error("Download failed:", err);
@@ -224,6 +222,93 @@ async function computeJunctionGMDAFromAllGenBaseMap() {
         "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateGMDAResults();
 }
+
+
+async function bdrLandmarksFromAllGenBaseMap() {
+    if (!allGenBaseMap || Object.keys(allGenBaseMap).length === 0) {
+        alert('Please run Analyse first before using the BDR Calculator.');
+        return;
+    }
+    
+    $('#loading-spinner').show()
+    const baseUrl = getServiceUrl('bdr');
+
+    for (const sketchmap of Object.keys(allGenBaseMap)) {
+        try {
+            const genLayer = allGenBaseMap[sketchmap];
+            const sketchLayer = allProcessedSketchMaps[sketchmap];
+            if (!genLayer || !sketchLayer) continue;
+            
+            const response = await $.ajax({
+                headers: { "X-CSRFToken": $.cookie("csrftoken")},
+                url: `${baseUrl}/bdr/calculateLandmarksBDR/`,
+                type: 'POST',
+                data: {
+                    basemapdata: JSON.stringify(genLayer.toGeoJSON()),
+                    sketchmapdata: JSON.stringify(sketchLayer.toGeoJSON())
+                }
+            });
+            
+            if (!genResultArray[sketchmap]) genResultArray[sketchmap] = {};
+            genResultArray[sketchmap].Land_r = response.r;
+            genResultArray[sketchmap].Land_DI = response.DI;
+            genResultArray[sketchmap].Land_phi = response.phi;
+            genResultArray[sketchmap].Land_theta = response.theta;
+            genResultArray[sketchmap].Land_alpha1 = response.alpha1;
+            genResultArray[sketchmap].Land_alpha2 = response.alpha2;
+        } catch (e) {
+            console.error('BDR failed for', sketchmap, e);
+        }
+    }
+    $('#loading-spinner').hide();
+    $('#summary_result_div').prop("style", 
+        "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    populateBDRResults();
+}
+
+
+async function bdrJunctionsFromAllGenBaseMap() {
+    if (!allGenBaseMap || Object.keys(allGenBaseMap).length === 0) {
+        alert('Please run Analyse first before using the BDR Calculator.');
+        return;
+    }
+
+    $('#loading-spinner').show()
+    const baseUrl = getServiceUrl('bdr');
+
+    for (const sketchmap of Object.keys(allGenBaseMap)) {
+        try {
+            const genLayer = allGenBaseMap[sketchmap]
+            const sketchLayer = allProcessedSketchMaps[sketchmap];
+            if (!genLayer || !sketchLayer) continue;
+
+            const response = await $.ajax({
+                headers: { "X-CSRFToken": $.cookie("csrftoken")},
+                url: `${baseUrl}/bdr/calculateJunctionsBDR/`,
+                type: 'POST',
+                data: {
+                    basemapdata: JSON.stringify(genLayer.toGeoJSON()),
+                    sketchmapdata: JSON.stringify(sketchLayer.toGeoJSON())
+                }
+            });
+            
+            if (!genResultArray[sketchmap]) genResultArray[sketchmap] = {};
+            genResultArray[sketchmap].Junc_r = response.r;
+            genResultArray[sketchmap].Junc_DI = response.DI;
+            genResultArray[sketchmap].Junc_phi = response.phi;
+            genResultArray[sketchmap].Junc_theta = response.theta;
+            genResultArray[sketchmap].Junc_alpha1 = response.alpha1;
+            genResultArray[sketchmap].Junc_alpha2 = response.alpha2;
+        } catch (e) {
+            console.error('BDR failed for', sketchmap, e);
+        }
+    }
+    $('#loading-spinner').hide();
+    $('#summary_result_div').prop("style", 
+        "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    populateBDRResults();
+}
+
 
 async function prepareDataForQualifier(index,GenBaseMap){
 MMGeoJsonData = GenBaseMap.toGeoJSON();
@@ -640,7 +725,8 @@ function getServiceUrl(serviceName) {
             completeness: 8002,
             qualitativerelations: 8003,
             validation:8004,
-            gmda:8005
+            gmda:8005,
+            bdr:8006
         };
         return `${protocol}//${hostName}:${portMap[serviceName]}`;
     }
@@ -1258,7 +1344,7 @@ function resolveGenId(rawId, lookups) {
     return s;
 }
 
-// Populate and toggle the GMDA summary panel from genResultArray
+
 // Populate and toggle the GMDA summary panel from genResultArray
 function populateGMDAResults() {
     const tbody = document.getElementById('gmda_rows');
@@ -1291,5 +1377,41 @@ function populateGMDAResults() {
         });
     }
     const panel = document.getElementById('gmda_summary');
+    if (panel) panel.style.display = (panel.style.display === 'none' ? 'block' : 'none');
+}
+
+
+// Populate and toggle the BDR summary panel from genResultArray
+function populateBDRResults() {
+    const tbody = document.getElementById('bdr_rows');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const keys = Object.keys(genResultArray || {});
+    if (keys.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No BDR results available</td></tr>';
+    } else {
+        keys.forEach(function(sketchmap) {
+            const g = genResultArray[sketchmap] || {};
+            const tr = document.createElement('tr');
+            
+            // Dynamically fall back to Junc_ keys if the standard keys are missing
+            const r = g.Land_r  !== undefined ? g.Land_r  : (g.Junc_r || 0);
+            const DI = g.Land_DI  !== undefined ? g.Land_DI  : (g.Junc_DI || 0);
+            const phi = g.Land_phi !== undefined ? g.Land_phi : (g.Junc_phi || 0);
+            const theta = g.Land_theta !== undefined ? g.Land_theta : (g.Junc_theta || 0);
+            const alpha1 = g.Land_alpha1 !== undefined ? g.Land_alpha1 : (g.Junc_alpha1 || 0);
+            const alpha2 = g.Land_alpha2  !== undefined ? g.Land_alpha2  : (g.Junc_alpha2 || 0);
+
+            tr.innerHTML = '<td>' + sketchmap + '</td>' +
+                           '<td>' + r + '</td>' +
+                           '<td>' + DI + '</td>' +
+                           '<td>' + phi + '</td>' +
+                           '<td>' + theta + '</td>' +
+                           '<td>' + alpha1 + '</td>' +
+                           '<td>' + alpha2 + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+    const panel = document.getElementById('bdr_summary');
     if (panel) panel.style.display = (panel.style.display === 'none' ? 'block' : 'none');
 }
