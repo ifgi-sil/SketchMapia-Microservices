@@ -2323,6 +2323,14 @@ if (commonPair) {
         const buildingsGMDA = document.getElementById('chkBuildingsGMDA').checked;
         const junctionsGMDA = document.getElementById('chkJunctionsGMDA').checked;
 
+
+
+        //NEW ONE: to show/hide the matching table columns based on selection
+        const table = document.getElementById('OrderingofMaps');
+        table.classList.toggle('hide-accuracy', !accuracy);
+        table.classList.toggle('hide-buildings', !buildingsGMDA);
+        table.classList.toggle('hide-junctions', !junctionsGMDA);
+        
         closeAnalyseModal();
 
         // analyseMultiMap populates allGenBaseMap, which will then be used by GMDA calculators 

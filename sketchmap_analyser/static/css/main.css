@@ -88,7 +88,7 @@ overflow:hidden;
         }
 
         .modal-box {
-            background: white;
+            background:#7AB629;
             padding: 20px 25px;
             border-radius: 5px;
             min-width: 280px;
@@ -98,14 +98,22 @@ overflow:hidden;
         .modal-box h3 {
             margin-top: 0;
             color: #ffffff;
-            font-size: 16px;
+            font-size: 18px;
         }
         
         .modal-box h4 {
             margin-top: 0;
             color: #ffffff;
+            font-size: 16px;
+        }
+
+        .modal-box h5 {
+            margin-top: 0;
+            color: #ffffff;
             font-size: 14px;
         }
+
+
         .modal-option {
             display: flex;
             align-items: center;
@@ -583,4 +591,51 @@ confused about which value is for what.
     position: sticky;
     top: 32px;   /* height of the first header row — adjust if it wraps to 2 lines */
     z-index: 2;
+}
+
+
+/* 
+Below is the styling for making only those columns appear which have been selected. 
+So, for example, if GMDA for Buildings is selected, 
+the 6 columns for GMDA buildings will be shown in the Result table, 
+and not the other Columns which are irrelevant
+*/
+
+
+#OrderingofMaps.hide-accuracy thead tr:nth-child(1) td:nth-child(4),
+#OrderingofMaps.hide-accuracy tbody td:nth-child(4) {
+  display: none;
+}
+
+
+#OrderingofMaps.hide-buildings thead tr:nth-child(1) td:nth-child(5),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(1),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(2),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(3),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(4),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(5),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(6),
+#OrderingofMaps.hide-buildings tbody tr:nth-child(5),
+#OrderingofMaps.hide-buildings tbody tr:nth-child(6),
+#OrderingofMaps.hide-buildings tbody tr:nth-child(7),
+#OrderingofMaps.hide-buildings tbody tr:nth-child(8),
+#OrderingofMaps.hide-buildings tbody tr:nth-child(9),
+#OrderingofMaps.hide-buildings tbody tr:nth-child(10) {
+  display:none;
+}
+
+#OrderingofMaps.hide-junctions thead tr:nth-child(1) td:nth-child(6),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(7),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(8),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(9),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(10),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(11),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(12),
+#OrderingofMaps.hide-junctions tbody td:nth-child(11),
+#OrderingofMaps.hide-junctions tbody td:nth-child(12),
+#OrderingofMaps.hide-junctions tbody td:nth-child(13),
+#OrderingofMaps.hide-junctions tbody td:nth-child(14),
+#OrderingofMaps.hide-junctions tbody td:nth-child(15),
+#OrderingofMaps.hide-junctions tbody td:nth-child(16) {
+    display: none;
 }

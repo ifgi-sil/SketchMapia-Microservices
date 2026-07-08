@@ -171,6 +171,8 @@ async function computeGMDAFromAllGenBaseMap() {
             genResultArray[sketchmap].DistAcc = response.DistAcc;
             genResultArray[sketchmap].RotBias = response.RotBias;
             genResultArray[sketchmap].AngAcc = response.AngAcc;
+            genResultArray[sketchmap].nTL = response.nTL;
+            genResultArray[sketchmap].nDL = response.nDL;
         } catch (e) {
             console.error('GMDA failed for', sketchmap, e);
         }
@@ -219,6 +221,9 @@ async function computeJunctionGMDAFromAllGenBaseMap() {
             genResultArray[sketchmap].Junc_DistAcc = response.DistAcc;
             genResultArray[sketchmap].Junc_RotBias = response.RotBias;
             genResultArray[sketchmap].Junc_AngAcc = response.AngAcc;
+            genResultArray[sketchmap].Junc_nTL = response.nTL;
+            genResultArray[sketchmap].Junc_nDL = response.nDL;
+
 
             // Store sketchmap junction GeoJSON keyed by sketchmap name
             // so sketchmapeditor.js can reload it when the user switches sketchmaps
@@ -1146,6 +1151,7 @@ var CompletenessSummaryCSV = [];
 var GeneralizationSummaryCSV = [];
 var QASummaryCSV = [];
 var OverallSummaryCsv = [];
+var GMDASummaryCSV = [];
 
 
 //COMPLETENESS
@@ -1303,7 +1309,7 @@ GeneralizationCSV.push("Sketch Map , BaseId , SketchId , GenId , Generalization 
 
 
   OverallSummaryCsv.push(
-    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering"
+    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering,GMDA_Buildings_CanOrg,GMDA_Buildings_CanAcc, GMDA_Buildings_ScaBias,GMDA_Buildings_DistAcc,GMDA_Buildings_RotBias,GMDA_Buildings_AngAcc,GMDA_Junctions_CanOrg,GMDA_Junctions_CanAcc, GMDA_Junctions_ScaBias,GMDA_Junctions_DistAcc,GMDA_Junctions_RotBias,GMDA_Junctions_AngAcc"
 );
 
 for (var i in Object.keys(genResultArray)) {
@@ -1348,7 +1354,51 @@ var precision = qa ? qa.precision : "";
         qualresponseArray[sketchmap].correctnessAccuracy_opra + "," +
         qualresponseArray[sketchmap].correctnessAccuracy_streetTop+ "," +
         qualresponseArray[sketchmap].correctnessAccuracy_LR +','+
-       qualresponseArray[sketchmap].correctnessAccuracy_LO
+       qualresponseArray[sketchmap].correctnessAccuracy_LO +','+
+        (genResultArray[sketchmap].CanOrg  !== undefined ? genResultArray[sketchmap].CanOrg : "") + ","+
+        (genResultArray[sketchmap].CanAcc  !== undefined ? genResultArray[sketchmap].CanAcc : "") + ","+
+        (genResultArray[sketchmap].ScaBias !== undefined ? genResultArray[sketchmap].ScaBias : "") + ","+
+        (genResultArray[sketchmap].DistAcc !== undefined ? genResultArray[sketchmap].DistAcc : "") + ","+
+        (genResultArray[sketchmap].RotBias !== undefined ? genResultArray[sketchmap].RotBias : "") + ","+
+        (genResultArray[sketchmap].AngAcc  !== undefined ? genResultArray[sketchmap].AngAcc : "") + ","+
+        (genResultArray[sketchmap].Junc_CanOrg   !== undefined ? genResultArray[sketchmap].Junc_CanOrg : "") + ","+
+        (genResultArray[sketchmap].Junc_CanAcc   !== undefined ? genResultArray[sketchmap].Junc_CanAcc : "") + ","+
+        (genResultArray[sketchmap].Junc_ScaBias  !== undefined ? genResultArray[sketchmap].Junc_ScaBias : "") + ","+
+        (genResultArray[sketchmap].Junc_DistAcc  !== undefined ? genResultArray[sketchmap].Junc_DistAcc : "") + ","+
+        (genResultArray[sketchmap].Junc_RotBias  !== undefined ? genResultArray[sketchmap].Junc_RotBias : "") + ","+
+        (genResultArray[sketchmap].Junc_AngAcc   !== undefined ? genResultArray[sketchmap].Junc_AngAcc : "")
+    );
+}
+
+
+// GMDA Summary CSV Building #
+
+GMDASummaryCSV.push(
+    "Sketch Map,Buildings_nTL,Buildings_nDL,Buildings_CanOrg,Buildings_CanAcc,Buildings_ScaBias,Buildings_DistAcc,Buildings_RotBias,Buildings_AngAcc,Junctions_nTL,Junctions_nDL,Junctions_CanOrg,Junctions_CanAcc,Junctions_ScaBias,Junctions_DistAcc,Junctions_RotBias,Junctions_AngAcc"
+);
+
+for (var i in Object.keys(genResultArray)) {
+    var sketchmap = Object.keys(genResultArray)[i];
+    var g = genResultArray[sketchmap];
+
+    GMDASummaryCSV.push(
+        sketchmap + "," +
+        (g.nTL !== undefined ? g.nTL : "") + "," +
+        (g.nDL !== undefined ? g.nDL : "") + "," + 
+        (g.CanOrg !== undefined ? g.CanOrg: "") + "," +
+        (g.CanAcc !== undefined ? g.CanAcc: "") + "," +
+        (g.ScaBias !== undefined ? g.ScaBias: "") + "," +
+        (g.DistAcc !== undefined ? g.DistAcc: "") + "," +
+        (g.RotBias !== undefined ? g.RotBias: "") + "," +
+        (g.AngAcc !== undefined ? g.AngAcc: "") + "," +
+        (g.Junc_nTL !== undefined ? g.Junc_nTL : "") + "," +
+        (g.Junc_nDL !== undefined ? g.Junc_nDL : "") + "," +
+        (g.Junc_CanOrg !== undefined ? g.Junc_CanOrg: "") + "," +
+        (g.Junc_CanAcc !== undefined ? g.Junc_CanAcc: "") + "," +
+        (g.Junc_ScaBias !== undefined ? g.Junc_ScaBias: "") + "," +
+        (g.Junc_DistAcc !== undefined ? g.Junc_DistAcc: "") + "," +
+        (g.Junc_RotBias !== undefined ? g.Junc_RotBias: "") + "," +
+        (g.Junc_AngAcc !== undefined ? g.Junc_AngAcc: "")
     );
 }
 
@@ -1358,6 +1408,7 @@ var precision = qa ? qa.precision : "";
         /*zip.file("GeneralizationSummary.csv", GeneralizationSummaryCSV.join("\n"));*/
         zip.file("ResultSummary.csv", OverallSummaryCsv.join("\n"));
         zip.file("GeneralizationDetailedOutput.csv",GeneralizationCSV.join("\n"));
+        zip.file("GMDADetailedOutput.csv", GMDASummaryCSV.join("\n"));
 
 if (Object.keys(qualresponseArray)!=0){
         for (var i = 0;i<numbOfSM-3;i++){

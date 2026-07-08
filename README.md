@@ -120,11 +120,10 @@ The end-to-end flow from loading a project to viewing the GMDA metrics:
 Calculates the six GMDA metrics using polygon features (landmarks such as buildings) from the generalized basemap and sketchmap.
 
 **How it works?**
-- After running **Analyse**, the generalized base map and processed sketchmap are available in the frontend.
-- Clicking the button sends both the maps as GeoJSON to the **gmda** microservice via a **POST** request to **/gmda/calculateGMDA**
+- In the **Analyse** modal, checking "Buildings GMDA" (alongside Completeness, and optionally Accuracy) triggers `runAnalysis()`, which runs the base analysis first, then automatically sends both maps as GeoJSON to the **gmda** microservice via a **POST** request to **/gmda/calculateGMDA**
 - The backend extracts all polygon features from both maps, builds 8-point MBRs for each, resolves alignment using the **SketchAlign** property, and classifies pairs into 1:1, Many:1, and Many:Many groups using Union-Find.
 - The six metrics are computed over all valid landmark pairs and returned as JSON.
-- Results are then displayed in the GMDA summary panel.
+- Results are then written directly into the **Buildings GMDA** columns of the main results table.
 
 2. **Junction based GMDA Calculator**:
 
@@ -135,12 +134,11 @@ Calculates the six GMDA metrics using street junction points -- the intersection
 </p>
 
 **How it works?**
-- After running **Analyse**, clicking the button sends both maps as **GeoJSON** to **/gmda/calculateJunctionGMDA**
+- In the **Analyse** modal, checking "Junctions GMDA" causes `runAnalysis()` to send both maps as **GeoJSON** to **/gmda/calculateJunctionGMDA** after the base analysis completes.
 - The backend detects junctions by finding road endpoints that share the same coordinate (rounded to 3 decimal places) across two or more line segments.
 - For the basemap, all junctions are considered for **nTL** (total landmarks). For the sketchmap, only junctions formed by road IDs shared with the base maps are used.
 - Junctions are matched between maps using a **topological subset check**: a sketch junction matches a base junction if all road IDs at the sketch junction are a subset of the road IDs at the base junction.
-- Matched pairs are classified using the same Union-Find grouping as landmarks, and the six metrics are computed and returned.
-
+- Matched pairs are classified using the same Union-Find grouping as landmarks, and the six metrics are computed and returned, then written into the **Junctions GMDA** columns of the main results table.
 
 ## New Microservice: **gmda**
 
@@ -199,8 +197,11 @@ basemapdata=[GeoJSON string]&sketchmapdata=[GeoJSON string]
 | File | Change |
 | :--- | :--- |
 | `docker-compose.yml` | Added `gmda` service on port 8005. |
-| `sketchmap_analyser/static/js/project.js` | Added `gmda: 8005` to port map; added `computeGMDAFromAllGenBaseMap()` and `computeJunctionGMDAFromAllGenBaseMap()` handler functions. |
-| `sketchmap_analyser/templates/generalizingmaps.html` | Added "Calculate GMDA" and "Calculate Junction GMDA" menu items under the GMDA Calculator menu. |
+| `sketchmap_analyser/static/js/project.js` | Added `gmda: 8005` to port map; added `computeGMDAFromAllGenBaseMap()` and `computeJunctionGMDAFromAllGenBaseMap()`; results are written into `genResultArray` (including `nTL`/`nDL`, and `Junc_`-prefixed fields for junctions) and rendered via `populateGMDAResults()` into the main results table; `ResultSummary.csv` export extended with 12 GMDA columns; added a new `GMDADetailedOutput.csv` export containing nTL/nDL and all six metrics for both Buildings and Junctions. |
+| `sketchmap_analyser/templates/generalizingmaps.html` | Replaced the standalone GMDA Calculator dropdown with an **Analyse** modal (`#analyseModal`) containing checkboxes: Completeness (locked on), Accuracy, Buildings GMDA, Junctions GMDA. |
+| `sketchmap_analyser/templates/results.html` | Merged GMDA metrics into the main results table (`#OrderingofMaps`) as two grouped column sets ("Buildings GMDA", "Junctions GMDA") with a 2-row `<thead>`, replacing the separate GMDA Summary panel. Result window enlarged and given a sticky header. |
+| `sketchmap_analyser/static/js/sketchmapeditor.js` | Added `openAnalyseModal()`, `closeAnalyseModal()`, and `runAnalysis()`, which sequences Completeness → Accuracy → Buildings GMDA → Junctions GMDA based on the modal's checkboxes, and toggles `hide-accuracy`/`hide-buildings`/`hide-junctions` classes on the results table to show only the selected columns. |
+| `sketchmap_analyser/static/css/main.css` | Added modal styling (matching the existing menu button theme) and column show/hide rules (`.hide-accuracy`, `.hide-buildings`, `.hide-junctions`) plus sticky header rules for the results table. |
 | `generalizations/generalizations/settings.py` | Fixed CORS configuration. |
 
 ---
@@ -212,11 +213,10 @@ basemapdata=[GeoJSON string]&sketchmapdata=[GeoJSON string]
    docker-compose up --build
    ```
 2. Open `http://localhost:8000/generalizingmaps/` in your browser.
-3. Load a project and click **Analyse** → **Both**.
-4. Once the analysis completes, click **GMDA Calculator** → **Calculate GMDA** for landmark metrics, or **GMDA Calculator** → **Calculate Junction GMDA** for junction metrics.
-5. Results will appear in the **GMDA Summary** panel and can be downloaded as a CSV.
-
-> ⚠️ **Note:** The `Analyse` step must be run before using the GMDA Calculator. The GMDA calculation strictly depends on the generalized base maps produced by the initial analysis.
+3. Load a project and click **Analyse**.
+4. In the modal, Completeness is always included. Check **Accuracy**, **Buildings GMDA**, and/or **Junctions GMDA** for whichever metrics you also want, then click **Run Analysis**.
+5. Results appear as columns in the results table: Completeness/Generalization/Qualitative Accuracy on the left, with **Buildings GMDA** and **Junctions GMDA** grouped in their own column sets on the right. Only the columns for metrics you selected are shown; the rest stay hidden.
+6. Click **Download Results** to get a zip containing `CompletenessDetailedOutput.csv`, `ResultSummary.csv` (now including all 12 GMDA columns), `GeneralizationDetailedOutput.csv`, `QADetailedOutput.csv`, and a new `GMDADetailedOutput.csv` with `nTL`/`nDL` plus all six metrics for both Buildings and Junctions.
 
 ---
 
