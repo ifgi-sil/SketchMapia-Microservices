@@ -293,28 +293,159 @@ integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNm
     <div id="analyseModal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
             <h3>Select Analysis Options</h3>
-            <h4>Qualitative Analysis</h4>
+            
             <label class="modal-option disabled-option">
                 <input type="checkbox" id="chkCompleteness" checked disabled>
                 Completeness (always included)
             </label>
-
-            <label class="modal-option">
-                <input type="checkbox" id="chkAccuracy">
-                Accuracy
+            <label class="modal-option disabled-option">
+                <input type="checkbox" id="chkCompleteness" checked disabled>
+                Generalizations (always included)
             </label>
+
+            <h4>Qualitative Analysis</h4>
+            <div class="modal-option-row">
+                <label class="modal-option" style="flex:1;">
+                    <input type="checkbox" id="chkAccuracy">
+                    Spatial Accuracy
+                </label>
+                <span class = "show-more-toggle" onclick="toggleShowMore()">
+                    <span id="showMoreArrow">▸</span>
+                    Show more
+                </span>
+            </div>
+            <div id="showMoreOptions" class="show-more-panel">
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkPrecision" disabled>
+                    Precision
+                    <span class ="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkRecall" disabled>
+                    Recall
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkBuildTopo" disabled>
+                    Building Topology (RCC8)
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkStBuildTopo" disabled>
+                    Street-Building Topology (DE9IM)
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox"  id="chkStOrient" disabled>
+                    Street Orientation (OPRA)
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkStConnect" disabled>
+                    Street Connectedness
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkBuildLR" disabled>
+                    Building Route Left-Right
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkBuildRouteLO" disabled>
+                    Building Route Linear Ordering
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+            </div>
+            
+
+
 
             <h4>Quantitative Analysis</h4>
             <h5>1. GMDA (Gardony Map Drawing Analyzer)</h5>
+            <div class="modal-option-row">
             <label class="modal-option">
                 <input type="checkbox" id="chkBuildingsGMDA">
                 Calculate GMDA for Buildings
             </label>
-
-            <label class="modal-option">
-                <input type="checkbox" id = "chkJunctionsGMDA">
-                Calculate GMDA for Junctions 
-            </label>
+            <span class = "show-more-toggle" onclick="toggleShowMoreGMDA()">
+                <span id="showMoreArrow">▸</span>
+                Show more
+            </span>
+            </div>
+            <div id="showMoreOptionsGMDA" class="show-more-panel">
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkCanOrg" disabled>
+                    Canonical Organisation
+                    <span class ="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkCanAcc" disabled>
+                    Canonical Accuracy
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkScaBias" disabled>
+                    Scaling Bias
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkDistAcc" disabled>
+                    Distance Accuracy
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox"  id="chkRotBias" disabled>
+                    Rotational Bias
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkAngAcc" disabled>
+                    Angular Accuracy
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+            </div>
+            <div class="modal-option-row">
+                <label class="modal-option">
+                    <input type="checkbox" id = "chkJunctionsGMDA">
+                    Calculate GMDA for Junctions
+                </label>
+                <span class = "show-more-toggle" onclick="toggleShowMoreJuncGMDA()">
+                    <span id="showMoreArrow">▸</span>
+                    Show more
+                </span>
+            </div>
+            <div id="showMoreOptionsJunctionsGMDA" class="show-more-panel">
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkJuncCanOrg" disabled>
+                    Canonical Organisation
+                    <span class ="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkJuncCanAcc" disabled>
+                    Canonical Accuracy
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkJuncScaBias" disabled>
+                    Scaling Bias
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkJuncDistAcc" disabled>
+                    Distance Accuracy
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox"  id="chkJuncRotBias" disabled>
+                    Rotational Bias
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+                <label class="modal-option disabled-option">
+                    <input type="checkbox" id="chkJuncAngAcc" disabled>
+                    Angular Accuracy
+                    <span class="coming-soon">(coming soon)</span>
+                </label>
+            </div>
             <div class="modal-actions">
 
                 <button onclick="runAnalysis()">Run Analysis</button>

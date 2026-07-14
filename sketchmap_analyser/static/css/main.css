@@ -80,7 +80,7 @@ overflow:hidden;
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -88,7 +88,7 @@ overflow:hidden;
         }
 
         .modal-box {
-            background:#7AB629;
+            background:#256428;
             padding: 20px 25px;
             border-radius: 5px;
             min-width: 280px;
@@ -128,8 +128,8 @@ overflow:hidden;
         }
 
         .modal-option:hover {
-            background: #256428;
-            color: #7AB629;
+            background: #7AB629;
+            color: #256428;
         }
 
         .disabled-option {
@@ -138,8 +138,8 @@ overflow:hidden;
         }
 
         .disabled-option:hover {
-            background: #256428;
-            color: #7AB629;
+            background: #7AB629;
+            color: #256428;
         }
 
         .modal-actions {
@@ -162,9 +162,36 @@ overflow:hidden;
         }
 
         .modal-actions button:hover {
-            background: #256428;
+            background: #2c402d;
             transform: translateY(-2px);
         }
+
+        .modal-box-wide {
+          width:700px;
+          max-width: 900px;
+      
+        }
+
+        .analysis-columns {
+          display:grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          align-items:start;
+          margin-top:10px;
+        }
+
+        .analysis-column {
+          min-width:0; 
+        }
+
+        .analysis-column h4 {
+          margin-top:0;
+        }
+
+
+
+
+
         
  .loader {
     border: 6px solid #f3f3f3;
@@ -638,4 +665,55 @@ and not the other Columns which are irrelevant
 #OrderingofMaps.hide-junctions tbody td:nth-child(15),
 #OrderingofMaps.hide-junctions tbody td:nth-child(16) {
     display: none;
+}
+
+/*
+Below is the design code for the Analyse panel, where we show more options
+on toggle
+*/
+.modal-option-row {
+  display:flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.show-more-toggle{
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.show-more-toggle:hover{
+  text-decoration: underline;
+}
+
+.show-more-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding-left: 12px;
+    border-left: 2px solid #eef7e6;
+    margin: 4px 0 4px 8px;
+}
+
+.show-more-panel.open {
+    grid-template-rows: 1fr;
+}
+
+.show-more-inner {
+    overflow: hidden;
+    padding-left: 12px;
+    border-left: 2px solid #eef7e6;
+    margin: 4px 0 4px 8px;
+    min-height: 0;
+}
+
+.coming-soon {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
 }

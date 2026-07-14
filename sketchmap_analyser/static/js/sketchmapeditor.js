@@ -2460,3 +2460,92 @@ function syncRouteOrderFromBaseToSketch() {
     });
 
 }
+
+
+
+//Code for the drop down menu in Analyse panel.
+
+function toggleShowMore() {
+    const panel = document.getElementById('showMoreOptions');
+    const arrow = document.getElementById('showMoreArrow');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the spatial accuracy checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkAccuracy').addEventListener('change', function() {
+    const isChecked = this.checked;
+    document.getElementById('chkPrecision').checked = isChecked;
+    document.getElementById('chkRecall').checked = isChecked;
+    document.getElementById('chkBuildTopo').checked = isChecked;
+    document.getElementById('chkStBuildTopo').checked = isChecked;
+    document.getElementById('chkStOrient').checked = isChecked;
+    document.getElementById('chkStConnect').checked = isChecked;
+    document.getElementById('chkBuildLR').checked = isChecked;
+    document.getElementById('chkBuildRouteLO').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreGMDA() {
+    const panel = document.getElementById('showMoreOptionsGMDA');
+    const arrow = document.getElementById('showMoreArrow');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the Calculate GMDA for Buildings checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkBuildingsGMDA').addEventListener('change', function() {
+    const isChecked = this.checked;
+    document.getElementById('chkCanOrg').checked = isChecked;
+    document.getElementById('chkCanAcc').checked = isChecked;
+    document.getElementById('chkScaBias').checked = isChecked;
+    document.getElementById('chkDistAcc').checked = isChecked;
+    document.getElementById('chkRotBias').checked = isChecked;
+    document.getElementById('chkAngAcc').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreJuncGMDA() {
+    const panel = document.getElementById('showMoreOptionsJunctionsGMDA');
+    const arrow = document.getElementById('showMoreArrow');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the Calculate GMDA for junctions checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkJunctionsGMDA').addEventListener('change', function() {
+    const isChecked = this.checked;
+    document.getElementById('chkJuncCanOrg').checked = isChecked;
+    document.getElementById('chkJuncCanAcc').checked = isChecked;
+    document.getElementById('chkJuncScaBias').checked = isChecked;
+    document.getElementById('chkJuncDistAcc').checked = isChecked;
+    document.getElementById('chkJuncRotBias').checked = isChecked;
+    document.getElementById('chkJuncAngAcc').checked = isChecked;
+    });
+});
