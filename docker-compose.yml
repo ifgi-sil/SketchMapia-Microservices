@@ -55,4 +55,13 @@ services:
       - ./gmda:/app
     restart: always
 
+  bdr:
+    build: ./bdr
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8006"
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./bdr:/app
+    restart: always
+
   
