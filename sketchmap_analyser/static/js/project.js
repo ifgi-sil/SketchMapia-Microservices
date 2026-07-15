@@ -177,7 +177,7 @@ async function computeGMDAFromAllGenBaseMap() {
     }
     $('#loading-spinner').hide();
     $('#summary_result_div').prop("style", 
-        "height:500px; width:1200px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+        "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateGMDAResults();
 }
 
@@ -290,7 +290,7 @@ async function computeJunctionGMDAFromAllGenBaseMap() {
 
     $('#loading-spinner').hide();
     $('#summary_result_div').prop("style",
-        "height:500px; width:1200px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+        "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateGMDAResults();
 }
 
@@ -333,7 +333,7 @@ async function bdrLandmarksFromAllGenBaseMap() {
     }
     $('#loading-spinner').hide();
     $('#summary_result_div').prop("style", 
-        "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+        "height:500px; overflow:auto; max-width:1600px; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateBDRResults();
 }
 
@@ -376,7 +376,7 @@ async function bdrJunctionsFromAllGenBaseMap() {
     }
     $('#loading-spinner').hide();
     $('#summary_result_div').prop("style", 
-        "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+        "height:500px; overflow:auto; max-width:1600px; visibility:visible; position:absolute; z-index:10000000; background-color:white");
     populateBDRResults();
 }
 
@@ -609,8 +609,8 @@ if (BooleanEditSketchMode){
     var resultTable = document.getElementById("resultRows");
     for (var i = 0; i<numbOfSM-3;i++){
         rows[i] = resultTable.insertRow(i);
-        cells[i] = new Array(16)
-        for (var j=0;j<16;j++){
+        cells[i] = new Array(28)
+        for (var j=0;j<28;j++){
             cells[i][j]=rows[i].insertCell(j);
         }
    }
@@ -733,7 +733,7 @@ try {
 
     const fixedIndex = index;
 
-    $('#summary_result_div').prop("style", "height:500px; width:1200px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    $('#summary_result_div').prop("style", "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
 
     const GenBasemapjson = await generalizedMapExtract(
       fixedIndex,
@@ -1238,6 +1238,7 @@ var GeneralizationSummaryCSV = [];
 var QASummaryCSV = [];
 var OverallSummaryCsv = [];
 var GMDASummaryCSV = [];
+var BDRSummaryCSV = [];
 
 
 //COMPLETENESS
@@ -1395,7 +1396,7 @@ GeneralizationCSV.push("Sketch Map , BaseId , SketchId , GenId , Generalization 
 
 
   OverallSummaryCsv.push(
-    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering,GMDA_Buildings_CanOrg,GMDA_Buildings_CanAcc, GMDA_Buildings_ScaBias,GMDA_Buildings_DistAcc,GMDA_Buildings_RotBias,GMDA_Buildings_AngAcc,GMDA_Junctions_CanOrg,GMDA_Junctions_CanAcc, GMDA_Junctions_ScaBias,GMDA_Junctions_DistAcc,GMDA_Junctions_RotBias,GMDA_Junctions_AngAcc"
+    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering,GMDA_Buildings_CanOrg,GMDA_Buildings_CanAcc, GMDA_Buildings_ScaBias,GMDA_Buildings_DistAcc,GMDA_Buildings_RotBias,GMDA_Buildings_AngAcc,GMDA_Junctions_CanOrg,GMDA_Junctions_CanAcc, GMDA_Junctions_ScaBias,GMDA_Junctions_DistAcc,GMDA_Junctions_RotBias,GMDA_Junctions_AngAcc,Buildings_Correlation,Buildings_DistortionIndex,Buildings_ScaleFactor,Buildings_Rotation,Buildings_X-Shift,Buildings_Y-Shift,Junctions_Correlation,Junctions_DistortionIndex,Junctions_ScaleFactor,Junctions_Rotation,Junctions_X-Shift,Junctions_Y-Shift"
 );
 
 for (var i in Object.keys(genResultArray)) {
@@ -1452,7 +1453,19 @@ var precision = qa ? qa.precision : "";
         (genResultArray[sketchmap].Junc_ScaBias  !== undefined ? genResultArray[sketchmap].Junc_ScaBias : "") + ","+
         (genResultArray[sketchmap].Junc_DistAcc  !== undefined ? genResultArray[sketchmap].Junc_DistAcc : "") + ","+
         (genResultArray[sketchmap].Junc_RotBias  !== undefined ? genResultArray[sketchmap].Junc_RotBias : "") + ","+
-        (genResultArray[sketchmap].Junc_AngAcc   !== undefined ? genResultArray[sketchmap].Junc_AngAcc : "")
+        (genResultArray[sketchmap].Junc_AngAcc   !== undefined ? genResultArray[sketchmap].Junc_AngAcc : "") + "," + 
+        (genResultArray[sketchmap].Land_r !== undefined ? genResultArray[sketchmap].Land_r : "") + "," +
+        (genResultArray[sketchmap].Land_DI !== undefined ? genResultArray[sketchmap].Land_DI : "") + "," +
+        (genResultArray[sketchmap].Land_phi !== undefined ? genResultArray[sketchmap].Land_phi : "") + "," +
+        (genResultArray[sketchmap].Land_theta !== undefined ? genResultArray[sketchmap].Land_theta : "") + "," +
+        (genResultArray[sketchmap].Land_alpha1 !== undefined ? genResultArray[sketchmap].Land_alpha1 : "") + "," +
+        (genResultArray[sketchmap].Land_alpha2 !== undefined ? genResultArray[sketchmap].Land_alpha2 : "") + "," +
+        (genResultArray[sketchmap].Junc_r !== undefined ? genResultArray[sketchmap].Junc_r : "") + "," +
+        (genResultArray[sketchmap].Junc_DI !== undefined ? genResultArray[sketchmap].Junc_DI : "") + "," +
+        (genResultArray[sketchmap].Junc_phi !== undefined ? genResultArray[sketchmap].Junc_phi : "") + "," +
+        (genResultArray[sketchmap].Junc_theta !== undefined ? genResultArray[sketchmap].Junc_theta : "") + "," +
+        (genResultArray[sketchmap].Junc_alpha1 !== undefined ? genResultArray[sketchmap].Junc_alpha1 : "") + "," +
+        (genResultArray[sketchmap].Junc_alpha2 !== undefined ? genResultArray[sketchmap].Junc_alpha2 : "")
     );
 }
 
@@ -1488,6 +1501,31 @@ for (var i in Object.keys(genResultArray)) {
     );
 }
 
+// BDR Summary CSV 
+BDRSummaryCSV.push(
+    "Sketch Map,Buildings_Correlation,Buildings_DistortionIndex,Buildings_ScaleFactor,Buildings_Rotation,Buildings_X-Shift,Buildings_Y-Shift,Junctions_Correlation,Junctions_DistortionIndex,Junctions_ScaleFactor,Junctions_Rotation,Junctions_X-Shift,Junctions_Y-Shift"
+);
+
+for (var i in Object.keys(genResultArray)) {
+    var sketchmap = Object.keys(genResultArray)[i];
+    var g = genResultArray[sketchmap];
+
+    BDRSummaryCSV.push(
+        sketchmap + "," +
+        (g.Land_r !== undefined ? g.Land_r : "") + "," +
+        (g.Land_DI !== undefined ? g.Land_DI : "") + "," +
+        (g.Land_phi !== undefined ? g.Land_phi : "") + "," +
+        (g.Land_theta !== undefined ? g.Land_theta : "") + "," +
+        (g.Land_alpha1 !== undefined ? g.Land_alpha1 : "") + "," +
+        (g.Land_alpha2 !== undefined ? g.Land_alpha2 : "") + "," +
+        (g.Junc_r !== undefined ? g.Junc_r : "") + "," +
+        (g.Junc_DI !== undefined ? g.Junc_DI : "") + "," +
+        (g.Junc_phi !== undefined ? g.Junc_phi : "") + "," +
+        (g.Junc_theta !== undefined ? g.Junc_theta : "") + "," +
+        (g.Junc_alpha1 !== undefined ? g.Junc_alpha1 : "") + "," +
+        (g.Junc_alpha2 !== undefined ? g.Junc_alpha2 : "")
+    );
+}
 
     var zip = new JSZip();
         zip.file("CompletenessDetailedOutput.csv", CompletenessSummaryCSV.join("\n"));
@@ -1495,6 +1533,7 @@ for (var i in Object.keys(genResultArray)) {
         zip.file("ResultSummary.csv", OverallSummaryCsv.join("\n"));
         zip.file("GeneralizationDetailedOutput.csv",GeneralizationCSV.join("\n"));
         zip.file("GMDADetailedOutput.csv", GMDASummaryCSV.join("\n"));
+        zip.file("BDRDetailedOutput.csv", BDRSummaryCSV.join("\n"));
 
 if (Object.keys(qualresponseArray)!=0){
         for (var i = 0;i<numbOfSM-3;i++){
@@ -1622,37 +1661,31 @@ function populateGMDAResults() {
 }
 
 
-// Populate and toggle the BDR summary panel from genResultArray
+// Populate Buildings/Junctions BDR columns in the main results table
 function populateBDRResults() {
-    const tbody = document.getElementById('bdr_rows');
-    if (!tbody) return;
-    tbody.innerHTML = '';
     const keys = Object.keys(genResultArray || {});
-    if (keys.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">No BDR results available</td></tr>';
-    } else {
-        keys.forEach(function(sketchmap) {
-            const g = genResultArray[sketchmap] || {};
-            const tr = document.createElement('tr');
-            
-            // Dynamically fall back to Junc_ keys if the standard keys are missing
-            const r = g.Land_r  !== undefined ? g.Land_r  : (g.Junc_r || 0);
-            const DI = g.Land_DI  !== undefined ? g.Land_DI  : (g.Junc_DI || 0);
-            const phi = g.Land_phi !== undefined ? g.Land_phi : (g.Junc_phi || 0);
-            const theta = g.Land_theta !== undefined ? g.Land_theta : (g.Junc_theta || 0);
-            const alpha1 = g.Land_alpha1 !== undefined ? g.Land_alpha1 : (g.Junc_alpha1 || 0);
-            const alpha2 = g.Land_alpha2  !== undefined ? g.Land_alpha2  : (g.Junc_alpha2 || 0);
+    keys.forEach(function(sketchmap) {
+        const rowIndex = sketchMapRowIndex[sketchmap];
+        if (rowIndex === undefined || !cells[rowIndex]) return;
 
-            tr.innerHTML = '<td>' + sketchmap + '</td>' +
-                           '<td>' + r + '</td>' +
-                           '<td>' + DI + '</td>' +
-                           '<td>' + phi + '</td>' +
-                           '<td>' + theta + '</td>' +
-                           '<td>' + alpha1 + '</td>' +
-                           '<td>' + alpha2 + '</td>';
-            tbody.appendChild(tr);
-        });
-    }
-    const panel = document.getElementById('bdr_summary');
-    if (panel) panel.style.display = (panel.style.display === 'none' ? 'block' : 'none');
+        const g = genResultArray[sketchmap] || {};
+
+        if (g.Land_r !== undefined) {
+            cells[rowIndex][16].innerHTML = g.Land_r;
+            cells[rowIndex][17].innerHTML = g.Land_DI;
+            cells[rowIndex][18].innerHTML = g.Land_phi;
+            cells[rowIndex][19].innerHTML = g.Land_theta;
+            cells[rowIndex][20].innerHTML = g.Land_alpha1;
+            cells[rowIndex][21].innerHTML = g.Land_alpha2;
+        }
+
+        if (g.Junc_r !== undefined) {
+            cells[rowIndex][22].innerHTML = g.Junc_r;
+            cells[rowIndex][23].innerHTML = g.Junc_DI;
+            cells[rowIndex][24].innerHTML = g.Junc_phi;
+            cells[rowIndex][25].innerHTML = g.Junc_theta;
+            cells[rowIndex][26].innerHTML = g.Junc_alpha1;
+            cells[rowIndex][27].innerHTML = g.Junc_alpha2;
+        }
+    });
 }

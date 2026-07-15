@@ -7,7 +7,7 @@
         </h4>
     </header>
     <div id = "allresults" style="position:relative" >
-            <div id="summaryResult" style="width: inherit;padding: 5px">
+            <div id="summaryResult" style="width: max-content;padding: 5px">
                  <table id="OrderingofMaps" class="table table-condensed text-center" style="font-size: 12px;font-family: Verdana">
             <thead>
                 <tr>
@@ -29,7 +29,14 @@
                     <td colspan = "6" style = "background-color: #e6f0f7;">
                         <div><b>Junctions GMDA</b></div>
                     </td>
+                    <td colspan="6" style ="background-color: #f7eef7;">
+                        <div><b>Buildings BDR</b></div>
+                    </td>
+                    <td colspan="6" style="background-color: #f7f7e6;">
+                        <div><b>Junctions BDR</b></div>
+                    </td>
                 </tr>
+            
                 <tr>
                     <td> 
                         <div><b>CanOrg</b></div>
@@ -67,60 +74,56 @@
                     <td>
                         <div><b>AngAcc</b></div>
                     </td>
+                    <td>
+                        <div><b>Correlation</b></div>
+                    </td>
+                    <td>
+                        <div><b>Distortion Index</b></div>
+                    </td>
+                    <td>
+                        <div><b>Scale Factor</b></div>
+                    </td>
+                    <td>
+                        <div><b>Rotation</b></div>
+                    </td>
+                    <td>
+                        <div><b>X-Shift</b></div>
+                    </td>
+                    <td>
+                        <div><b>Y-Shift</b></div>
+                    </td>
+                    <td>
+                        <div><b>Correlation</b></div>
+                    </td>
+                    <td>
+                        <div><b>Distortion Index</b></div>
+                    </td>
+                    <td>
+                        <div><b>Scale Factor</b></div>
+                    </td>
+                    <td>
+                        <div><b>Rotation</b></div>
+                    </td>
+                    <td>
+                        <div><b>X-Shift</b></div>
+                    </td>
+                    <td>
+                        <div><b>Y-Shift</b></div>
+                    </td>
                 </tr>
             </thead>
+                
             <tbody id = "resultRows">
             </tbody>
         </table>
         <div id="loading-spinner" style="display:none;">
             <div class="loader"></div>
         </div>
-        <div style="padding: 2px;text-align: right">
-
-                <a id="exportAsCSV" type="button" class="btn btn-outline-info btn-file btn-sm" >
-                   Download Results
-                </a>
-                <button id="showGMDA" type="button" class="btn btn-outline-primary btn-sm" style="margin-left:8px">Show GMDA Summary</button>
-            </div>
-            <div id="gmda_summary" style="display:none; margin-top:10px;">
-                <h6>GMDA Summary</h6>
-                <div id="gmda_table_container" style="max-height:300px; overflow:auto;">
-                    <table id="gmdaTable" class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Sketch Map</th>
-                                <th>CanOrg</th>
-                                <th>CanAcc</th>
-                                <th>ScaBias</th>
-                                <th>DistAcc</th>
-                                <th>RotBias</th>
-                                <th>AngAcc</th>
-                            </tr>
-                        </thead>
-                        <tbody id="gmda_rows"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="bdr_summary" style="display:none; margin-top:10px;">
-                <h6>BDR Summary</h6>
-                <div id="bdr_table_container" style="max-height:300px; overflow:auto;">
-                    <table id="bdrTable" class="table table-sm table-striped">
-                        <thead>
-                            <tr>
-                                <th>Sketch Map   </th>
-                                <th>Correlation   </th>
-                                <th>Distorsion Index (%)   </th>
-                                <th>Scale Factor   </th>
-                                <th>Rotation (°)   </th>
-                                <th>X-Shift (px)   </th>
-                                <th>Y-Shift (px)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bdr_rows"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div style="padding: 2px; text-align: right; position: sticky; left: 0; width: 100%;">
+            <a id="exportAsCSV" type="button" class="btn btn-outline-info btn-file btn-sm">
+            Download Results
+            </a>
+        </div>
     </div>
    </div>
 </div>

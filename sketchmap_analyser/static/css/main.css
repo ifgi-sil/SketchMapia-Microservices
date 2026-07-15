@@ -104,13 +104,13 @@ overflow:hidden;
         .modal-box h4 {
             margin-top: 0;
             color: #ffffff;
-            font-size: 16px;
+            font-size: 20px;
         }
 
         .modal-box h5 {
             margin-top: 0;
             color: #ffffff;
-            font-size: 14px;
+            font-size: 15px;
         }
 
 
@@ -118,8 +118,8 @@ overflow:hidden;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin: 10px 0;
-            padding: 8px;
+            margin: 1px 0;
+            padding: 6px 15px;
             cursor: pointer;
             color:#ffffff;
             font-size: 13px;
@@ -603,6 +603,12 @@ confused about which value is for what.
 
 
 */
+
+#OrderingofMaps {
+  width:auto;
+  min-width:100%;
+  white-space:nowrap;
+}
 #OrderingofMaps thead td {
     background-color: white;/* this  is for making the headers have a white background,
     otherwise it is transparent and causes confusion.*/
@@ -642,12 +648,12 @@ and not the other Columns which are irrelevant
 #OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(4),
 #OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(5),
 #OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(6),
-#OrderingofMaps.hide-buildings tbody tr:nth-child(5),
-#OrderingofMaps.hide-buildings tbody tr:nth-child(6),
-#OrderingofMaps.hide-buildings tbody tr:nth-child(7),
-#OrderingofMaps.hide-buildings tbody tr:nth-child(8),
-#OrderingofMaps.hide-buildings tbody tr:nth-child(9),
-#OrderingofMaps.hide-buildings tbody tr:nth-child(10) {
+#OrderingofMaps.hide-buildings tbody td:nth-child(5),
+#OrderingofMaps.hide-buildings tbody td:nth-child(6),
+#OrderingofMaps.hide-buildings tbody td:nth-child(7),
+#OrderingofMaps.hide-buildings tbody td:nth-child(8),
+#OrderingofMaps.hide-buildings tbody td:nth-child(9),
+#OrderingofMaps.hide-buildings tbody td:nth-child(10) {
   display:none;
 }
 
@@ -666,6 +672,39 @@ and not the other Columns which are irrelevant
 #OrderingofMaps.hide-junctions tbody td:nth-child(16) {
     display: none;
 }
+
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(1) td:nth-child(7),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(13),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(14),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(15),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(16),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(17),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(18),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(17),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(18),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(19),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(20),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(21),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(22) {
+  display: none;
+}
+
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(1) td:nth-child(8),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(19),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(20),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(21),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(22),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(23),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(24),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(23),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(24),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(25),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(26),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(27),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(28) {
+  display: none;
+}
+
 
 /*
 Below is the design code for the Analyse panel, where we show more options

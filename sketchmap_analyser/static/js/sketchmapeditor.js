@@ -2322,6 +2322,9 @@ if (commonPair) {
         const accuracy = document.getElementById('chkAccuracy').checked;
         const buildingsGMDA = document.getElementById('chkBuildingsGMDA').checked;
         const junctionsGMDA = document.getElementById('chkJunctionsGMDA').checked;
+        const landmarksBDR = document.getElementById('chkLandmarksBDR').checked;
+        const junctionsBDR = document.getElementById('chkJunctionsBDR').checked;
+
 
 
 
@@ -2330,6 +2333,9 @@ if (commonPair) {
         table.classList.toggle('hide-accuracy', !accuracy);
         table.classList.toggle('hide-buildings', !buildingsGMDA);
         table.classList.toggle('hide-junctions', !junctionsGMDA);
+        table.classList.toggle('hide-landmarks-bdr', !landmarksBDR);
+        table.classList.toggle('hide-junctions-bdr', !junctionsBDR);
+
         
         closeAnalyseModal();
 
@@ -2343,6 +2349,14 @@ if (commonPair) {
 
         if(junctionsGMDA){
             await computeJunctionGMDAFromAllGenBaseMap();
+        }
+
+        if(landmarksBDR){
+            await bdrLandmarksFromAllGenBaseMap();
+        }
+
+        if(junctionsBDR) {
+            await bdrJunctionsFromAllGenBaseMap();
         }
     }
 
@@ -2547,5 +2561,61 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('chkJuncDistAcc').checked = isChecked;
     document.getElementById('chkJuncRotBias').checked = isChecked;
     document.getElementById('chkJuncAngAcc').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreBDR() {
+    const panel = document.getElementById('showMoreOptionsBDR');
+    const arrow = document.getElementById('showMoreArrowBDR');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listenet for the Calculate BDR for buildings checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkLandmarksBDR').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.getElementById('chkr').checked = isChecked;
+        document.getElementById('chkDI').checked = isChecked;
+        document.getElementById('chkphi').checked = isChecked;
+        document.getElementById('chktheta').checked = isChecked;
+        document.getElementById('chkalpha1').checked = isChecked;
+        document.getElementById('chkalpha2').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreJuncsBDR() {
+    const panel = document.getElementById('showMoreOptionsJuncsBDR');
+    const arrow = document.getElementById('showMoreArrowJuncsBDR');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the Calculate BDR for juncstions checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkJunctionsBDR').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.getElementById('chkJuncsr').checked = isChecked;
+        document.getElementById('chkJuncsDI').checked = isChecked;
+        document.getElementById('chkJuncsphi').checked = isChecked;
+        document.getElementById('chkJuncstheta').checked = isChecked;
+        document.getElementById('chkJuncsalpha1').checked = isChecked;
+        document.getElementById('chkJuncsalpha2').checked = isChecked;
     });
 });
