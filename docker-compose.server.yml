@@ -1,0 +1,72 @@
+# Server (production) compose file — reference copy.
+#
+# Unlike docker-compose.yml (local development, builds from source), this file
+# pulls prebuilt images from GHCR. Images are published by
+# .github/workflows/registry-build-publish.yml on every push to main, and
+# watchtower polls the registry so running containers update automatically.
+#
+# NOTE: watchtower only updates containers that already exist. After adding a
+# new service here, run `docker compose up -d` on the server once to create it.
+
+services:
+  generalizations:
+    image: ghcr.io/ifgi-sil/generalizations:latest
+    platform: linux/amd64
+    ports:
+      - "8001:8001"
+    restart: always
+
+  completeness:
+    image: ghcr.io/ifgi-sil/completeness:latest
+    platform: linux/amd64
+    ports:
+      - "8002:8002"
+    restart: always
+
+  # accuracy
+  qualitativerelations:
+    image: ghcr.io/ifgi-sil/qualitativerelations:latest
+    platform: linux/amd64
+    ports:
+      - "8003:8003"
+    restart: always
+
+  sketchmap_analyser:
+    image: ghcr.io/ifgi-sil/sketchmap_analyser:latest
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    restart: always
+
+  # added in 14.01.24
+  sketchmap_validation:
+    image: ghcr.io/ifgi-sil/validation:latest
+    platform: linux/amd64
+    ports:
+      - "8004:8004"
+    restart: always
+
+  gmda:
+    image: ghcr.io/ifgi-sil/gmda:latest
+    platform: linux/amd64
+    ports:
+      - "8005:8005"
+    restart: always
+
+  bdr:
+    image: ghcr.io/ifgi-sil/bdr:latest
+    platform: linux/amd64
+    ports:
+      - "8006:8006"
+    restart: always
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json
+    environment:
+      - DOCKER_API_VERSION=1.44
+    command: --cleanup --interval 60
