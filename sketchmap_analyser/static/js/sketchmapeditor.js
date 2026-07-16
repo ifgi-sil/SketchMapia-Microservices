@@ -18,6 +18,8 @@ var sketchOriginalLayer = new L.LayerGroup();
 var sketchProcessedLayer = new L.LayerGroup();
 var linearOrderingActive = false;
 var linearOrdering = new L.LayerGroup();
+var layerGroup_junctions = new L.LayerGroup();
+var layerGroup_junctions_sm = new L.LayerGroup();
 var baseMap;
 var baseMaptitle;
 var drawnItems;
@@ -120,6 +122,7 @@ function renderImageFile(file, location) {
         layerGroupBasemap.addTo(baseMap);
         layerGroupBasemapGen.addTo(baseMap);
         drawnItems.addTo(layerGroupBasemap);
+        //layerGroup_junctions.addTo(baseMap);
 
 
 
@@ -127,7 +130,8 @@ function renderImageFile(file, location) {
         var layerControl = new L.Control.Layers(null, {
             'Base Map': layerGroupBasemap,
             'Generalized Map': layerGroupBasemapGen,
-            'Linear Ordering' : linearOrdering
+            'Linear Ordering' : linearOrdering,
+            'Junctions': layerGroup_junctions
         }).addTo(baseMap);
         labelButton.addTo(baseMap);
         missingFeatureButton.addTo(baseMap);
@@ -921,15 +925,42 @@ drawnItems.eachLayer(function(blayer){
         var SMLoaded = new L.imageOverlay(image.src,bounds);
         SMLoaded.addTo(sketchMap);
         sketchMap.fitBounds(bounds);
+        layerGroup_junctions_sm.addTo(sketchMap);
         enableDefaultArrows(sketchMap);
         var layerControl = new L.Control.Layers(null, {
              "Original Sketch Map": sketchOriginalLayer,
             "Generalized_ids": sketchProcessedLayer,
-            "Linear Ordering": linearOrdering
+            "Linear Ordering": linearOrdering,
+            'Junctions' : layerGroup_junctions_sm
         }).addTo(sketchMap);
+
         sketchMaptitle = $(e.target).parent().attr("data-original-title");
+        // Reload junction points for the newly selected sketchmap
+        layerGroup_junctions_sm.clearLayers();
+        if (typeof junctionGeoJsonPerSketchmap !== 'undefined' && junctionGeoJsonPerSketchmap[sketchMaptitle]) {
+            L.geoJSON(junctionGeoJsonPerSketchmap[sketchMaptitle], {
+                pointToLayer: function(feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: feature.properties.matched ? 7 : 5,
+                        fillColor: feature.properties.matched ? '#00ff40' : '#059318',
+                        color: '#ffffff',
+                        weight: 1.5,
+                        fillOpacity: 0.85
+                    });
+                },
+                onEachFeature: function(feature, layer) {
+                    layer.bindTooltip(
+                        '<b>Junction:</b> ' + feature.properties.junc_id +
+                        '<br><b>Lines:</b> ' + feature.properties.line_ids.join(', ') +
+                        '<br><b>Matched:</b> ' + (feature.properties.matched ? 'Yes' : 'No'),
+                        { permanent: false, direction: 'auto' }
+                    );
+                }
+            }).addTo(layerGroup_junctions_sm);
+        }
+
         console.log("THUMBNAIL CLICKED:",sketchMaptitle);
-            labelButtonSketchMap.addTo(sketchMap);
+        labelButtonSketchMap.addTo(sketchMap);
             sketchOriginalLayer.clearLayers();
             sketchProcessedLayer.clearLayers();
             if (allProcessedSketchMaps.hasOwnProperty(sketchMaptitle)) {
@@ -2276,6 +2307,58 @@ if (commonPair) {
             }, 10);
         }
     }
+        function openAnalyseModal() {
+        document.getElementById('analyseModal').style.display = 'flex';
+    }
+
+    function closeAnalyseModal() {
+        document.getElementById('analyseModal').style.display = 'none';
+    }
+
+    async function runAnalysis() {
+        // Completeness is hardcoded true regardless of DOM state — the checkbox
+        // is disabled in the UI, but this is a safety net against devtools tampering.
+        const completeness = true;
+        const accuracy = document.getElementById('chkAccuracy').checked;
+        const buildingsGMDA = document.getElementById('chkBuildingsGMDA').checked;
+        const junctionsGMDA = document.getElementById('chkJunctionsGMDA').checked;
+        const landmarksBDR = document.getElementById('chkLandmarksBDR').checked;
+        const junctionsBDR = document.getElementById('chkJunctionsBDR').checked;
+
+
+
+
+        //NEW ONE: to show/hide the matching table columns based on selection
+        const table = document.getElementById('OrderingofMaps');
+        table.classList.toggle('hide-accuracy', !accuracy);
+        table.classList.toggle('hide-buildings', !buildingsGMDA);
+        table.classList.toggle('hide-junctions', !junctionsGMDA);
+        table.classList.toggle('hide-landmarks-bdr', !landmarksBDR);
+        table.classList.toggle('hide-junctions-bdr', !junctionsBDR);
+
+        
+        closeAnalyseModal();
+
+        // analyseMultiMap populates allGenBaseMap, which will then be used by GMDA calculators 
+        // so, it must be finished first then the GMDA will run.
+        await analyseMultiMap(completeness, accuracy);
+
+        if (buildingsGMDA) {
+            await computeGMDAFromAllGenBaseMap();
+        }
+
+        if(junctionsGMDA){
+            await computeJunctionGMDAFromAllGenBaseMap();
+        }
+
+        if(landmarksBDR){
+            await bdrLandmarksFromAllGenBaseMap();
+        }
+
+        if(junctionsBDR) {
+            await bdrJunctionsFromAllGenBaseMap();
+        }
+    }
 
     // Hide dropdowns when clicking outside
     document.addEventListener('click', function(event) {
@@ -2391,3 +2474,148 @@ function syncRouteOrderFromBaseToSketch() {
     });
 
 }
+
+
+
+//Code for the drop down menu in Analyse panel.
+
+function toggleShowMore() {
+    const panel = document.getElementById('showMoreOptions');
+    const arrow = document.getElementById('showMoreArrow');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the spatial accuracy checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkAccuracy').addEventListener('change', function() {
+    const isChecked = this.checked;
+    document.getElementById('chkPrecision').checked = isChecked;
+    document.getElementById('chkRecall').checked = isChecked;
+    document.getElementById('chkBuildTopo').checked = isChecked;
+    document.getElementById('chkStBuildTopo').checked = isChecked;
+    document.getElementById('chkStOrient').checked = isChecked;
+    document.getElementById('chkStConnect').checked = isChecked;
+    document.getElementById('chkBuildLR').checked = isChecked;
+    document.getElementById('chkBuildRouteLO').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreGMDA() {
+    const panel = document.getElementById('showMoreOptionsGMDA');
+    const arrow = document.getElementById('showMoreArrowGMDA');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the Calculate GMDA for Buildings checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkBuildingsGMDA').addEventListener('change', function() {
+    const isChecked = this.checked;
+    document.getElementById('chkCanOrg').checked = isChecked;
+    document.getElementById('chkCanAcc').checked = isChecked;
+    document.getElementById('chkScaBias').checked = isChecked;
+    document.getElementById('chkDistAcc').checked = isChecked;
+    document.getElementById('chkRotBias').checked = isChecked;
+    document.getElementById('chkAngAcc').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreJuncGMDA() {
+    const panel = document.getElementById('showMoreOptionsJunctionsGMDA');
+    const arrow = document.getElementById('showMoreArrowJuncGMDA');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the Calculate GMDA for junctions checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkJunctionsGMDA').addEventListener('change', function() {
+    const isChecked = this.checked;
+    document.getElementById('chkJuncCanOrg').checked = isChecked;
+    document.getElementById('chkJuncCanAcc').checked = isChecked;
+    document.getElementById('chkJuncScaBias').checked = isChecked;
+    document.getElementById('chkJuncDistAcc').checked = isChecked;
+    document.getElementById('chkJuncRotBias').checked = isChecked;
+    document.getElementById('chkJuncAngAcc').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreBDR() {
+    const panel = document.getElementById('showMoreOptionsBDR');
+    const arrow = document.getElementById('showMoreArrowBDR');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listenet for the Calculate BDR for buildings checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkLandmarksBDR').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.getElementById('chkr').checked = isChecked;
+        document.getElementById('chkDI').checked = isChecked;
+        document.getElementById('chkphi').checked = isChecked;
+        document.getElementById('chktheta').checked = isChecked;
+        document.getElementById('chkalpha1').checked = isChecked;
+        document.getElementById('chkalpha2').checked = isChecked;
+    });
+});
+
+
+function toggleShowMoreJuncsBDR() {
+    const panel = document.getElementById('showMoreOptionsJuncsBDR');
+    const arrow = document.getElementById('showMoreArrowJuncsBDR');
+    const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+
+    if (isOpen) {
+        panel.style.maxHeight = '0px';
+        arrow.textContent = '▸';
+    } else {
+        panel.style.maxHeight = panel.scrollHeight + 'px';
+        arrow.textContent = '▾';
+    }
+}
+
+//event listener for the Calculate BDR for juncstions checkbox
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chkJunctionsBDR').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.getElementById('chkJuncsr').checked = isChecked;
+        document.getElementById('chkJuncsDI').checked = isChecked;
+        document.getElementById('chkJuncsphi').checked = isChecked;
+        document.getElementById('chkJuncstheta').checked = isChecked;
+        document.getElementById('chkJuncsalpha1').checked = isChecked;
+        document.getElementById('chkJuncsalpha2').checked = isChecked;
+    });
+});

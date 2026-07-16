@@ -21,6 +21,7 @@ var orderedGenResult = [];
 var orderedCompResult = [];
 var rows = [];
 var cells = [];
+var sketchMapRowIndex = {};
 var numbOfSM;
 var tempallOriginalSketchMaps;
 var streetCountBeforeGen = 0;
@@ -28,7 +29,7 @@ var lmCountBeforeGen = 0;
 var hostName
 var intervalLookup = {};
 var intervalLookupSM = {};
-
+var junctionGeoJsonPerSketchmap = {};
 
 
 
@@ -133,6 +134,251 @@ download = true;
   }
 }
 
+
+
+// Compute GMDA results from already-generated generalized base maps (allGenBaseMap)
+async function computeGMDAFromAllGenBaseMap() {
+    if (!allGenBaseMap || Object.keys(allGenBaseMap).length === 0) {
+        alert('Please run Analyse first before using the GMDA Calculator.');
+        return;
+    }
+
+    $('#loading-spinner').show()
+    const baseUrl = getServiceUrl('gmda');
+
+    for (const sketchmap of Object.keys(allGenBaseMap)) {
+        try {
+            const genLayer = allGenBaseMap[sketchmap]
+            const sketchLayer = allProcessedSketchMaps[sketchmap];
+            if (!genLayer || !sketchLayer) continue;
+
+            const response = await $.ajax({
+                headers: { "X-CSRFToken": $.cookie("csrftoken")},
+                url: `${baseUrl}/gmda/calculateGMDA/`,
+                type: 'POST',
+                data: {
+                    basemapdata: JSON.stringify(genLayer.toGeoJSON()),
+                    sketchmapdata: JSON.stringify(sketchLayer.toGeoJSON())
+                }
+            });
+            
+            if (!genResultArray[sketchmap]) genResultArray[sketchmap] = {};
+            genResultArray[sketchmap].CanOrg = response.CanOrg;
+            genResultArray[sketchmap].CanAcc = response.CanAcc;
+            genResultArray[sketchmap].ScaBias = response.ScaBias;
+            genResultArray[sketchmap].DistAcc = response.DistAcc;
+            genResultArray[sketchmap].RotBias = response.RotBias;
+            genResultArray[sketchmap].AngAcc = response.AngAcc;
+            genResultArray[sketchmap].nTL = response.nTL;
+            genResultArray[sketchmap].nDL = response.nDL;
+        } catch (e) {
+            console.error('GMDA failed for', sketchmap, e);
+        }
+    }
+    $('#loading-spinner').hide();
+    $('#summary_result_div').prop("style", 
+        "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    populateGMDAResults();
+}
+
+
+async function computeJunctionGMDAFromAllGenBaseMap() {
+    if (!allGenBaseMap || Object.keys(allGenBaseMap).length === 0) {
+        alert('Please run Analyse first before using the GMDA Calculator.');
+        return;
+    }
+
+    $('#loading-spinner').show();
+    const baseUrl = getServiceUrl('gmda');
+
+    // Clear basemap junction layer before repopulating
+    layerGroup_junctions.clearLayers();
+    junctionGeoJsonPerSketchmap = {};
+
+    for (const sketchmap of Object.keys(allGenBaseMap)) {
+        try {
+            const genLayer = allGenBaseMap[sketchmap];
+            const sketchLayer = allProcessedSketchMaps[sketchmap];
+            if (!genLayer || !sketchLayer) continue;
+
+            const response = await $.ajax({
+                headers: {"X-CSRFToken": $.cookie('csrftoken')},
+                url: `${baseUrl}/gmda/calculateJunctionGMDA/`,
+                type: 'POST',
+                data: {
+                    basemapdata: JSON.stringify(genLayer.toGeoJSON()),
+                    sketchmapdata: JSON.stringify(sketchLayer.toGeoJSON())
+                }
+            });
+
+            // Store scalar results
+            if (!genResultArray[sketchmap]) genResultArray[sketchmap] = {};
+            genResultArray[sketchmap].Junc_CanOrg = response.CanOrg;
+            genResultArray[sketchmap].Junc_CanAcc = response.CanAcc;
+            genResultArray[sketchmap].Junc_ScaBias = response.ScaBias;
+            genResultArray[sketchmap].Junc_DistAcc = response.DistAcc;
+            genResultArray[sketchmap].Junc_RotBias = response.RotBias;
+            genResultArray[sketchmap].Junc_AngAcc = response.AngAcc;
+            genResultArray[sketchmap].Junc_nTL = response.nTL;
+            genResultArray[sketchmap].Junc_nDL = response.nDL;
+
+
+            // Store sketchmap junction GeoJSON keyed by sketchmap name
+            // so sketchmapeditor.js can reload it when the user switches sketchmaps
+            if (response.sketchmapJunctions) {
+                junctionGeoJsonPerSketchmap[sketchmap] = response.sketchmapJunctions;
+            }
+
+            // Add basemap junctions to the shared basemap layer
+            if (response.basemapJunctions && response.basemapJunctions.features.length > 0) {
+                L.geoJSON(response.basemapJunctions, {
+                    pointToLayer: function(feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: feature.properties.matched ? 7 : 5,
+                            fillColor: feature.properties.matched ? '#00ff40' : '#059318',
+                            color: '#ffffff',
+                            weight: 1.5,
+                            fillOpacity: 1.0
+                        });
+                    },
+                    onEachFeature: function(feature, layer) {
+                        layer.bindTooltip(
+                            '<b>Junction:</b> ' + feature.properties.junc_id +
+                            '<br><b>Lines:</b> ' + feature.properties.line_ids.join(', ') +
+                            '<br><b>Matched:</b> ' + (feature.properties.matched ? 'Yes' : 'No'),
+                            { permanent: false, direction: 'auto' }
+                        );
+                    }
+                }).addTo(layerGroup_junctions);
+            }
+
+        } catch (e) {
+            console.error('Junction GMDA failed for', sketchmap, e);
+        }
+    }
+
+    // Attach basemap junction layer to baseMap
+    layerGroup_junctions.addTo(baseMap);
+
+    // Attach sketchmap junction layer to sketchMap if it exists,
+    // and load junctions for the currently active sketchmap
+    if (typeof sketchMap !== 'undefined' && sketchMap !== null) {
+        layerGroup_junctions_sm.clearLayers();
+        if (sketchMaptitle && junctionGeoJsonPerSketchmap[sketchMaptitle]) {
+            L.geoJSON(junctionGeoJsonPerSketchmap[sketchMaptitle], {
+                pointToLayer: function(feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: feature.properties.matched ? 7 : 5,
+                        fillColor: feature.properties.matched ? '#00ff40' : '#059318',
+                        color: '#ffffff',
+                        weight: 1.5,
+                        fillOpacity: 1.0
+                    });
+                },
+                onEachFeature: function(feature, layer) {
+                    layer.bindTooltip(
+                        '<b>Junction:</b> ' + feature.properties.junc_id +
+                        '<br><b>Lines:</b> ' + feature.properties.line_ids.join(', ') +
+                        '<br><b>Matched:</b> ' + (feature.properties.matched ? 'Yes' : 'No'),
+                        { permanent: false, direction: 'auto' }
+                    );
+                }
+            }).addTo(layerGroup_junctions_sm);
+        }
+        layerGroup_junctions_sm.addTo(sketchMap);
+    }
+
+    $('#loading-spinner').hide();
+    $('#summary_result_div').prop("style",
+        "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    populateGMDAResults();
+}
+
+
+async function bdrLandmarksFromAllGenBaseMap() {
+    if (!allGenBaseMap || Object.keys(allGenBaseMap).length === 0) {
+        alert('Please run Analyse first before using the BDR Calculator.');
+        return;
+    }
+    
+    $('#loading-spinner').show()
+    const baseUrl = getServiceUrl('bdr');
+
+    for (const sketchmap of Object.keys(allGenBaseMap)) {
+        try {
+            const genLayer = allGenBaseMap[sketchmap];
+            const sketchLayer = allProcessedSketchMaps[sketchmap];
+            if (!genLayer || !sketchLayer) continue;
+            
+            const response = await $.ajax({
+                headers: { "X-CSRFToken": $.cookie("csrftoken")},
+                url: `${baseUrl}/bdr/calculateLandmarksBDR/`,
+                type: 'POST',
+                data: {
+                    basemapdata: JSON.stringify(genLayer.toGeoJSON()),
+                    sketchmapdata: JSON.stringify(sketchLayer.toGeoJSON())
+                }
+            });
+            
+            if (!genResultArray[sketchmap]) genResultArray[sketchmap] = {};
+            genResultArray[sketchmap].Land_r = response.r;
+            genResultArray[sketchmap].Land_DI = response.DI;
+            genResultArray[sketchmap].Land_phi = response.phi;
+            genResultArray[sketchmap].Land_theta = response.theta;
+            genResultArray[sketchmap].Land_alpha1 = response.alpha1;
+            genResultArray[sketchmap].Land_alpha2 = response.alpha2;
+        } catch (e) {
+            console.error('BDR failed for', sketchmap, e);
+        }
+    }
+    $('#loading-spinner').hide();
+    $('#summary_result_div').prop("style", 
+        "height:500px; overflow:auto; max-width:1600px; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    populateBDRResults();
+}
+
+
+async function bdrJunctionsFromAllGenBaseMap() {
+    if (!allGenBaseMap || Object.keys(allGenBaseMap).length === 0) {
+        alert('Please run Analyse first before using the BDR Calculator.');
+        return;
+    }
+
+    $('#loading-spinner').show()
+    const baseUrl = getServiceUrl('bdr');
+
+    for (const sketchmap of Object.keys(allGenBaseMap)) {
+        try {
+            const genLayer = allGenBaseMap[sketchmap]
+            const sketchLayer = allProcessedSketchMaps[sketchmap];
+            if (!genLayer || !sketchLayer) continue;
+
+            const response = await $.ajax({
+                headers: { "X-CSRFToken": $.cookie("csrftoken")},
+                url: `${baseUrl}/bdr/calculateJunctionsBDR/`,
+                type: 'POST',
+                data: {
+                    basemapdata: JSON.stringify(genLayer.toGeoJSON()),
+                    sketchmapdata: JSON.stringify(sketchLayer.toGeoJSON())
+                }
+            });
+            
+            if (!genResultArray[sketchmap]) genResultArray[sketchmap] = {};
+            genResultArray[sketchmap].Junc_r = response.r;
+            genResultArray[sketchmap].Junc_DI = response.DI;
+            genResultArray[sketchmap].Junc_phi = response.phi;
+            genResultArray[sketchmap].Junc_theta = response.theta;
+            genResultArray[sketchmap].Junc_alpha1 = response.alpha1;
+            genResultArray[sketchmap].Junc_alpha2 = response.alpha2;
+        } catch (e) {
+            console.error('BDR failed for', sketchmap, e);
+        }
+    }
+    $('#loading-spinner').hide();
+    $('#summary_result_div').prop("style", 
+        "height:500px; overflow:auto; max-width:1600px; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    populateBDRResults();
+}
 
 
 async function prepareDataForQualifier(index,GenBaseMap){
@@ -363,8 +609,8 @@ if (BooleanEditSketchMode){
     var resultTable = document.getElementById("resultRows");
     for (var i = 0; i<numbOfSM-3;i++){
         rows[i] = resultTable.insertRow(i);
-        cells[i] = new Array(4)
-        for (var j=0;j<4;j++){
+        cells[i] = new Array(28)
+        for (var j=0;j<28;j++){
             cells[i][j]=rows[i].insertCell(j);
         }
    }
@@ -388,6 +634,7 @@ if (BooleanEditSketchMode){
         streetCountBeforeGen = 0;
         lmCountBeforeGen = 0;
         currentsketchMap = Object.keys(tempallOriginalSketchMaps)[i];
+        sketchMapRowIndex[currentsketchMap] = index;
 
             GenBaseMap = null;
         ProcSketchMap = null;
@@ -486,7 +733,7 @@ try {
 
     const fixedIndex = index;
 
-    $('#summary_result_div').prop("style", "height:500px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    $('#summary_result_div').prop("style", "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
 
     const GenBasemapjson = await generalizedMapExtract(
       fixedIndex,
@@ -548,7 +795,9 @@ function getServiceUrl(serviceName) {
             generalizations: 8001,
             completeness: 8002,
             qualitativerelations: 8003,
-            validation:8004
+            validation:8004,
+            gmda:8005,
+            bdr:8006
         };
         return `${protocol}//${hostName}:${portMap[serviceName]}`;
     }
@@ -988,6 +1237,8 @@ var CompletenessSummaryCSV = [];
 var GeneralizationSummaryCSV = [];
 var QASummaryCSV = [];
 var OverallSummaryCsv = [];
+var GMDASummaryCSV = [];
+var BDRSummaryCSV = [];
 
 
 //COMPLETENESS
@@ -1145,7 +1396,7 @@ GeneralizationCSV.push("Sketch Map , BaseId , SketchId , GenId , Generalization 
 
 
   OverallSummaryCsv.push(
-    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering"
+    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering,GMDA_Buildings_CanOrg,GMDA_Buildings_CanAcc, GMDA_Buildings_ScaBias,GMDA_Buildings_DistAcc,GMDA_Buildings_RotBias,GMDA_Buildings_AngAcc,GMDA_Junctions_CanOrg,GMDA_Junctions_CanAcc, GMDA_Junctions_ScaBias,GMDA_Junctions_DistAcc,GMDA_Junctions_RotBias,GMDA_Junctions_AngAcc,Buildings_Correlation,Buildings_DistortionIndex,Buildings_ScaleFactor,Buildings_Rotation,Buildings_X-Shift,Buildings_Y-Shift,Junctions_Correlation,Junctions_DistortionIndex,Junctions_ScaleFactor,Junctions_Rotation,Junctions_X-Shift,Junctions_Y-Shift"
 );
 
 for (var i in Object.keys(genResultArray)) {
@@ -1190,16 +1441,99 @@ var precision = qa ? qa.precision : "";
         qualresponseArray[sketchmap].correctnessAccuracy_opra + "," +
         qualresponseArray[sketchmap].correctnessAccuracy_streetTop+ "," +
         qualresponseArray[sketchmap].correctnessAccuracy_LR +','+
-       qualresponseArray[sketchmap].correctnessAccuracy_LO
+       qualresponseArray[sketchmap].correctnessAccuracy_LO +','+
+        (genResultArray[sketchmap].CanOrg  !== undefined ? genResultArray[sketchmap].CanOrg : "") + ","+
+        (genResultArray[sketchmap].CanAcc  !== undefined ? genResultArray[sketchmap].CanAcc : "") + ","+
+        (genResultArray[sketchmap].ScaBias !== undefined ? genResultArray[sketchmap].ScaBias : "") + ","+
+        (genResultArray[sketchmap].DistAcc !== undefined ? genResultArray[sketchmap].DistAcc : "") + ","+
+        (genResultArray[sketchmap].RotBias !== undefined ? genResultArray[sketchmap].RotBias : "") + ","+
+        (genResultArray[sketchmap].AngAcc  !== undefined ? genResultArray[sketchmap].AngAcc : "") + ","+
+        (genResultArray[sketchmap].Junc_CanOrg   !== undefined ? genResultArray[sketchmap].Junc_CanOrg : "") + ","+
+        (genResultArray[sketchmap].Junc_CanAcc   !== undefined ? genResultArray[sketchmap].Junc_CanAcc : "") + ","+
+        (genResultArray[sketchmap].Junc_ScaBias  !== undefined ? genResultArray[sketchmap].Junc_ScaBias : "") + ","+
+        (genResultArray[sketchmap].Junc_DistAcc  !== undefined ? genResultArray[sketchmap].Junc_DistAcc : "") + ","+
+        (genResultArray[sketchmap].Junc_RotBias  !== undefined ? genResultArray[sketchmap].Junc_RotBias : "") + ","+
+        (genResultArray[sketchmap].Junc_AngAcc   !== undefined ? genResultArray[sketchmap].Junc_AngAcc : "") + "," + 
+        (genResultArray[sketchmap].Land_r !== undefined ? genResultArray[sketchmap].Land_r : "") + "," +
+        (genResultArray[sketchmap].Land_DI !== undefined ? genResultArray[sketchmap].Land_DI : "") + "," +
+        (genResultArray[sketchmap].Land_phi !== undefined ? genResultArray[sketchmap].Land_phi : "") + "," +
+        (genResultArray[sketchmap].Land_theta !== undefined ? genResultArray[sketchmap].Land_theta : "") + "," +
+        (genResultArray[sketchmap].Land_alpha1 !== undefined ? genResultArray[sketchmap].Land_alpha1 : "") + "," +
+        (genResultArray[sketchmap].Land_alpha2 !== undefined ? genResultArray[sketchmap].Land_alpha2 : "") + "," +
+        (genResultArray[sketchmap].Junc_r !== undefined ? genResultArray[sketchmap].Junc_r : "") + "," +
+        (genResultArray[sketchmap].Junc_DI !== undefined ? genResultArray[sketchmap].Junc_DI : "") + "," +
+        (genResultArray[sketchmap].Junc_phi !== undefined ? genResultArray[sketchmap].Junc_phi : "") + "," +
+        (genResultArray[sketchmap].Junc_theta !== undefined ? genResultArray[sketchmap].Junc_theta : "") + "," +
+        (genResultArray[sketchmap].Junc_alpha1 !== undefined ? genResultArray[sketchmap].Junc_alpha1 : "") + "," +
+        (genResultArray[sketchmap].Junc_alpha2 !== undefined ? genResultArray[sketchmap].Junc_alpha2 : "")
     );
 }
 
+
+// GMDA Summary CSV Building #
+
+GMDASummaryCSV.push(
+    "Sketch Map,Buildings_nTL,Buildings_nDL,Buildings_CanOrg,Buildings_CanAcc,Buildings_ScaBias,Buildings_DistAcc,Buildings_RotBias,Buildings_AngAcc,Junctions_nTL,Junctions_nDL,Junctions_CanOrg,Junctions_CanAcc,Junctions_ScaBias,Junctions_DistAcc,Junctions_RotBias,Junctions_AngAcc"
+);
+
+for (var i in Object.keys(genResultArray)) {
+    var sketchmap = Object.keys(genResultArray)[i];
+    var g = genResultArray[sketchmap];
+
+    GMDASummaryCSV.push(
+        sketchmap + "," +
+        (g.nTL !== undefined ? g.nTL : "") + "," +
+        (g.nDL !== undefined ? g.nDL : "") + "," + 
+        (g.CanOrg !== undefined ? g.CanOrg: "") + "," +
+        (g.CanAcc !== undefined ? g.CanAcc: "") + "," +
+        (g.ScaBias !== undefined ? g.ScaBias: "") + "," +
+        (g.DistAcc !== undefined ? g.DistAcc: "") + "," +
+        (g.RotBias !== undefined ? g.RotBias: "") + "," +
+        (g.AngAcc !== undefined ? g.AngAcc: "") + "," +
+        (g.Junc_nTL !== undefined ? g.Junc_nTL : "") + "," +
+        (g.Junc_nDL !== undefined ? g.Junc_nDL : "") + "," +
+        (g.Junc_CanOrg !== undefined ? g.Junc_CanOrg: "") + "," +
+        (g.Junc_CanAcc !== undefined ? g.Junc_CanAcc: "") + "," +
+        (g.Junc_ScaBias !== undefined ? g.Junc_ScaBias: "") + "," +
+        (g.Junc_DistAcc !== undefined ? g.Junc_DistAcc: "") + "," +
+        (g.Junc_RotBias !== undefined ? g.Junc_RotBias: "") + "," +
+        (g.Junc_AngAcc !== undefined ? g.Junc_AngAcc: "")
+    );
+}
+
+// BDR Summary CSV 
+BDRSummaryCSV.push(
+    "Sketch Map,Buildings_Correlation,Buildings_DistortionIndex,Buildings_ScaleFactor,Buildings_Rotation,Buildings_X-Shift,Buildings_Y-Shift,Junctions_Correlation,Junctions_DistortionIndex,Junctions_ScaleFactor,Junctions_Rotation,Junctions_X-Shift,Junctions_Y-Shift"
+);
+
+for (var i in Object.keys(genResultArray)) {
+    var sketchmap = Object.keys(genResultArray)[i];
+    var g = genResultArray[sketchmap];
+
+    BDRSummaryCSV.push(
+        sketchmap + "," +
+        (g.Land_r !== undefined ? g.Land_r : "") + "," +
+        (g.Land_DI !== undefined ? g.Land_DI : "") + "," +
+        (g.Land_phi !== undefined ? g.Land_phi : "") + "," +
+        (g.Land_theta !== undefined ? g.Land_theta : "") + "," +
+        (g.Land_alpha1 !== undefined ? g.Land_alpha1 : "") + "," +
+        (g.Land_alpha2 !== undefined ? g.Land_alpha2 : "") + "," +
+        (g.Junc_r !== undefined ? g.Junc_r : "") + "," +
+        (g.Junc_DI !== undefined ? g.Junc_DI : "") + "," +
+        (g.Junc_phi !== undefined ? g.Junc_phi : "") + "," +
+        (g.Junc_theta !== undefined ? g.Junc_theta : "") + "," +
+        (g.Junc_alpha1 !== undefined ? g.Junc_alpha1 : "") + "," +
+        (g.Junc_alpha2 !== undefined ? g.Junc_alpha2 : "")
+    );
+}
 
     var zip = new JSZip();
         zip.file("CompletenessDetailedOutput.csv", CompletenessSummaryCSV.join("\n"));
         /*zip.file("GeneralizationSummary.csv", GeneralizationSummaryCSV.join("\n"));*/
         zip.file("ResultSummary.csv", OverallSummaryCsv.join("\n"));
         zip.file("GeneralizationDetailedOutput.csv",GeneralizationCSV.join("\n"));
+        zip.file("GMDADetailedOutput.csv", GMDASummaryCSV.join("\n"));
+        zip.file("BDRDetailedOutput.csv", BDRSummaryCSV.join("\n"));
 
 if (Object.keys(qualresponseArray)!=0){
         for (var i = 0;i<numbOfSM-3;i++){
@@ -1291,4 +1625,67 @@ function resolveGenId(rawId, lookups) {
 
     if (lookups.baseIdToGenId[s]) return lookups.baseIdToGenId[s];
     return s;
+}
+
+// Populate and toggle the GMDA summary panel from genResultArray
+
+function populateGMDAResults() {
+
+    const keys = Object.keys(genResultArray || {});
+    keys.forEach(function(sketchmap) {
+        const rowIndex = sketchMapRowIndex[sketchmap];
+        if (rowIndex === undefined || !cells[rowIndex]) return;
+
+        const g = genResultArray[sketchmap] || {};
+
+        // Buildings GMDA -> columns 4-9 (only written if actually computed)
+        if (g.CanOrg !== undefined) {
+            cells[rowIndex][4].innerHTML = g.CanOrg;
+            cells[rowIndex][5].innerHTML = g.CanAcc;
+            cells[rowIndex][6].innerHTML = g.ScaBias;
+            cells[rowIndex][7].innerHTML = g.DistAcc;
+            cells[rowIndex][8].innerHTML = g.RotBias;
+            cells[rowIndex][9].innerHTML = g.AngAcc;
+        }
+
+        // Junctions GMDA -> columns 10-15 (only written if actually computed)
+        if (g.Junc_CanOrg !== undefined) {
+            cells[rowIndex][10].innerHTML = g.Junc_CanOrg;
+            cells[rowIndex][11].innerHTML = g.Junc_CanAcc;
+            cells[rowIndex][12].innerHTML = g.Junc_ScaBias;
+            cells[rowIndex][13].innerHTML = g.Junc_DistAcc;
+            cells[rowIndex][14].innerHTML = g.Junc_RotBias;
+            cells[rowIndex][15].innerHTML = g.Junc_AngAcc;
+        }
+    });
+}
+
+
+// Populate Buildings/Junctions BDR columns in the main results table
+function populateBDRResults() {
+    const keys = Object.keys(genResultArray || {});
+    keys.forEach(function(sketchmap) {
+        const rowIndex = sketchMapRowIndex[sketchmap];
+        if (rowIndex === undefined || !cells[rowIndex]) return;
+
+        const g = genResultArray[sketchmap] || {};
+
+        if (g.Land_r !== undefined) {
+            cells[rowIndex][16].innerHTML = g.Land_r;
+            cells[rowIndex][17].innerHTML = g.Land_DI;
+            cells[rowIndex][18].innerHTML = g.Land_phi;
+            cells[rowIndex][19].innerHTML = g.Land_theta;
+            cells[rowIndex][20].innerHTML = g.Land_alpha1;
+            cells[rowIndex][21].innerHTML = g.Land_alpha2;
+        }
+
+        if (g.Junc_r !== undefined) {
+            cells[rowIndex][22].innerHTML = g.Junc_r;
+            cells[rowIndex][23].innerHTML = g.Junc_DI;
+            cells[rowIndex][24].innerHTML = g.Junc_phi;
+            cells[rowIndex][25].innerHTML = g.Junc_theta;
+            cells[rowIndex][26].innerHTML = g.Junc_alpha1;
+            cells[rowIndex][27].innerHTML = g.Junc_alpha2;
+        }
+    });
 }

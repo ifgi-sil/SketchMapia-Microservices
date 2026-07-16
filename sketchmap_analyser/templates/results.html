@@ -1,40 +1,129 @@
-<div id="summary_result_div" class="w3-card-4 w3-round" style = "height : 500px ; overflow : auto; visibility: hidden ; position:absolute ; z-index:10000000">
+<div id="summary_result_div" class="w3-card-4 w3-round" style = "height : 500px ; width : 1200px; overflow : auto; visibility: hidden ; position:absolute ; z-index:10000000">
     <header class="w3-panel w3-round w3-teal" style="position: relative; padding: 0px;margin: 0px">
-        <h6 style="padding-top:5px;margin-left: 3px "><span><b> Result Summary</b></span>
+        <h4 style="padding-top:5px;margin-left: 3px "><span><b> Result Summary</b></span>
             <button id="close_bnt" aria-label="Close Account Info Modal Box" style="float: right"
                     onclick="document.getElementById('summary_result_div').style.display='none'">&times;
             </button>
-        </h6>
+        </h4>
     </header>
     <div id = "allresults" style="position:relative" >
-            <div id="summaryResult" style="width: inherit;padding: 5px">
+            <div id="summaryResult" style="width: max-content;padding: 5px">
                  <table id="OrderingofMaps" class="table table-condensed text-center" style="font-size: 12px;font-family: Verdana">
             <thead>
-                <td>
-                    <div><b>Sketch Maps</b></div>
-                </td>
-                <td>
-                    <div><b>Completeness- Streets  Buildings</b></div>
-                </td>
-                <td>
-                    <div><b>Generalization</b></div>
-                </td>
-                 <td>
-                    <div><b>Qualitative Accuracy </b></div>
-                </td>
+                <tr>
+                    <td rowspan = "2">
+                       <div><b>Sketch Maps</b></div> 
+                    </td>
+                    <td rowspan = "2">
+                        <div><b>Completeness- Streets  Buildings</b></div>
+                    </td>
+                    <td rowspan = "2">
+                        <div><b>Generalization</b></div>
+                    </td>
+                    <td rowspan = "2">
+                        <div><b>Qualitative Accuracy </b></div>
+                    </td>
+                    <td colspan = "6" style = "background-color: #eef7e6;">
+                        <div><b>Buildings GMDA</b></div>
+                    </td>
+                    <td colspan = "6" style = "background-color: #e6f0f7;">
+                        <div><b>Junctions GMDA</b></div>
+                    </td>
+                    <td colspan="6" style ="background-color: #f7eef7;">
+                        <div><b>Buildings BDR</b></div>
+                    </td>
+                    <td colspan="6" style="background-color: #f7f7e6;">
+                        <div><b>Junctions BDR</b></div>
+                    </td>
+                </tr>
+            
+                <tr>
+                    <td> 
+                        <div><b>CanOrg</b></div>
+                    </td>
+                    <td>
+                        <div><b>CanAcc</b></div>
+                    </td>
+                    <td>
+                        <div><b>ScaBias</b></div>
+                    </td>
+                    <td>
+                        <div><b>DistAcc</b></div>
+                    </td>
+                    <td>
+                        <div><b>RotBias</b></div>
+                    </td>
+                    <td>
+                        <div><b>AngAcc</b></div>
+                    </td>
+                    <td> 
+                        <div><b>CanOrg</b></div>
+                    </td>
+                    <td>
+                        <div><b>CanAcc</b></div>
+                    </td>
+                    <td>
+                        <div><b>ScaBias</b></div>
+                    </td>
+                    <td>
+                        <div><b>DistAcc</b></div>
+                    </td>
+                    <td>
+                        <div><b>RotBias</b></div>
+                    </td>
+                    <td>
+                        <div><b>AngAcc</b></div>
+                    </td>
+                    <td>
+                        <div><b>Correlation</b></div>
+                    </td>
+                    <td>
+                        <div><b>Distortion Index</b></div>
+                    </td>
+                    <td>
+                        <div><b>Scale Factor</b></div>
+                    </td>
+                    <td>
+                        <div><b>Rotation</b></div>
+                    </td>
+                    <td>
+                        <div><b>X-Shift</b></div>
+                    </td>
+                    <td>
+                        <div><b>Y-Shift</b></div>
+                    </td>
+                    <td>
+                        <div><b>Correlation</b></div>
+                    </td>
+                    <td>
+                        <div><b>Distortion Index</b></div>
+                    </td>
+                    <td>
+                        <div><b>Scale Factor</b></div>
+                    </td>
+                    <td>
+                        <div><b>Rotation</b></div>
+                    </td>
+                    <td>
+                        <div><b>X-Shift</b></div>
+                    </td>
+                    <td>
+                        <div><b>Y-Shift</b></div>
+                    </td>
+                </tr>
             </thead>
+                
             <tbody id = "resultRows">
             </tbody>
         </table>
-    <div id="loading-spinner" style="display:none;">
-  <div class="loader"></div>
-</div>
-         <div style="padding: 2px;text-align: right">
-
-                <a id="exportAsCSV" type="button" class="btn btn-outline-info btn-file btn-sm" >
-                   Download Results
-                </a>
-            </div>
+        <div id="loading-spinner" style="display:none;">
+            <div class="loader"></div>
+        </div>
+        <div style="padding: 2px; text-align: right; position: sticky; left: 0; width: 100%;">
+            <a id="exportAsCSV" type="button" class="btn btn-outline-info btn-file btn-sm">
+            Download Results
+            </a>
+        </div>
     </div>
    </div>
 </div>

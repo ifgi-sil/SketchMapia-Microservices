@@ -75,6 +75,124 @@ overflow:hidden;
             top: -100%;
         }
 
+          /* Analyse popup style */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000000;
+        }
+
+        .modal-box {
+            background:#256428;
+            padding: 20px 25px;
+            border-radius: 5px;
+            min-width: 280px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-box h3 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 18px;
+        }
+        
+        .modal-box h4 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 20px;
+        }
+
+        .modal-box h5 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 15px;
+        }
+
+
+        .modal-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 1px 0;
+            padding: 6px 15px;
+            cursor: pointer;
+            color:#ffffff;
+            font-size: 13px;
+            border-radius: 5px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .modal-option:hover {
+            background: #7AB629;
+            color: #256428;
+        }
+
+        .disabled-option {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .disabled-option:hover {
+            background: #7AB629;
+            color: #256428;
+        }
+
+        .modal-actions {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-actions button {
+            margin: 0;
+            cursor: pointer;
+            background: #7AB629;
+            color: white;
+            padding: 5px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .modal-actions button:hover {
+            background: #2c402d;
+            transform: translateY(-2px);
+        }
+
+        .modal-box-wide {
+          width:700px;
+          max-width: 900px;
+      
+        }
+
+        .analysis-columns {
+          display:grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+          align-items:start;
+          margin-top:10px;
+        }
+
+        .analysis-column {
+          min-width:0; 
+        }
+
+        .analysis-column h4 {
+          margin-top:0;
+        }
+
+
+
+
+
+        
  .loader {
     border: 6px solid #f3f3f3;
     border-top: 6px solid #3498db;
@@ -475,4 +593,166 @@ input[type="file"] {
     padding:10px;
     background:#fff3cd;
     border-radius:6px;
+}
+
+
+/* 
+Below is the code for making the headers in our Result tab stick 
+to a place rather than get scrolled up and then the user can get 
+confused about which value is for what.
+
+
+*/
+
+#OrderingofMaps {
+  width:auto;
+  min-width:100%;
+  white-space:nowrap;
+}
+#OrderingofMaps thead td {
+    background-color: white;/* this  is for making the headers have a white background,
+    otherwise it is transparent and causes confusion.*/
+}
+
+#OrderingofMaps thead tr:nth-child(1) td {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+#OrderingofMaps thead tr:nth-child(2) td {
+    position: sticky;
+    top: 32px;   /* height of the first header row — adjust if it wraps to 2 lines */
+    z-index: 2;
+}
+
+
+/* 
+Below is the styling for making only those columns appear which have been selected. 
+So, for example, if GMDA for Buildings is selected, 
+the 6 columns for GMDA buildings will be shown in the Result table, 
+and not the other Columns which are irrelevant
+*/
+
+
+#OrderingofMaps.hide-accuracy thead tr:nth-child(1) td:nth-child(4),
+#OrderingofMaps.hide-accuracy tbody td:nth-child(4) {
+  display: none;
+}
+
+
+#OrderingofMaps.hide-buildings thead tr:nth-child(1) td:nth-child(5),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(1),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(2),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(3),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(4),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(5),
+#OrderingofMaps.hide-buildings thead tr:nth-child(2) td:nth-child(6),
+#OrderingofMaps.hide-buildings tbody td:nth-child(5),
+#OrderingofMaps.hide-buildings tbody td:nth-child(6),
+#OrderingofMaps.hide-buildings tbody td:nth-child(7),
+#OrderingofMaps.hide-buildings tbody td:nth-child(8),
+#OrderingofMaps.hide-buildings tbody td:nth-child(9),
+#OrderingofMaps.hide-buildings tbody td:nth-child(10) {
+  display:none;
+}
+
+#OrderingofMaps.hide-junctions thead tr:nth-child(1) td:nth-child(6),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(7),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(8),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(9),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(10),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(11),
+#OrderingofMaps.hide-junctions thead tr:nth-child(2) td:nth-child(12),
+#OrderingofMaps.hide-junctions tbody td:nth-child(11),
+#OrderingofMaps.hide-junctions tbody td:nth-child(12),
+#OrderingofMaps.hide-junctions tbody td:nth-child(13),
+#OrderingofMaps.hide-junctions tbody td:nth-child(14),
+#OrderingofMaps.hide-junctions tbody td:nth-child(15),
+#OrderingofMaps.hide-junctions tbody td:nth-child(16) {
+    display: none;
+}
+
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(1) td:nth-child(7),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(13),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(14),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(15),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(16),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(17),
+#OrderingofMaps.hide-landmarks-bdr thead tr:nth-child(2) td:nth-child(18),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(17),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(18),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(19),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(20),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(21),
+#OrderingofMaps.hide-landmarks-bdr tbody td:nth-child(22) {
+  display: none;
+}
+
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(1) td:nth-child(8),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(19),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(20),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(21),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(22),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(23),
+#OrderingofMaps.hide-junctions-bdr thead tr:nth-child(2) td:nth-child(24),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(23),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(24),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(25),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(26),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(27),
+#OrderingofMaps.hide-junctions-bdr tbody td:nth-child(28) {
+  display: none;
+}
+
+
+/*
+Below is the design code for the Analyse panel, where we show more options
+on toggle
+*/
+.modal-option-row {
+  display:flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.show-more-toggle{
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.show-more-toggle:hover{
+  text-decoration: underline;
+}
+
+.show-more-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding-left: 12px;
+    border-left: 2px solid #eef7e6;
+    margin: 4px 0 4px 8px;
+}
+
+.show-more-panel.open {
+    grid-template-rows: 1fr;
+}
+
+.show-more-inner {
+    overflow: hidden;
+    padding-left: 12px;
+    border-left: 2px solid #eef7e6;
+    margin: 4px 0 4px 8px;
+    min-height: 0;
+}
+
+.coming-soon {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
 }
