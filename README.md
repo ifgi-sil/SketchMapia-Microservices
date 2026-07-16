@@ -1,163 +1,164 @@
-# Gardony Map Drawing Analyzer (GMDA) - SketchMapia Feature
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.x-blue)
-![Django](https://img.shields.io/badge/Django-microservice-green)
-![Docker](https://img.shields.io/badge/Docker-compose-2496ED)
-![Port](https://img.shields.io/badge/gmda-:8005-orange)
+# 🗺️ SketchMapia Microservices
 
+**A microservice platform for the quantitative analysis of sketch maps**
 
-This repo is built directly on top of the [Sketchmapia Microservices](https://github.com/ifgi-sil/SketchMapia-Microservices) framework developed by the Spatial Intelligence Lab (SIL) at the Institute for Geoinformatics (IFGI) in University of Münster.
+Developed by the [Spatial Intelligence Lab (SIL)](https://www.uni-muenster.de/Geoinformatics/en/sil/) · Institute for Geoinformatics (IFGI) · University of Münster
 
+[![Build & Publish](https://github.com/ifgi-sil/SketchMapia-Microservices/actions/workflows/registry-build-publish.yml/badge.svg)](https://github.com/ifgi-sil/SketchMapia-Microservices/actions/workflows/registry-build-publish.yml)
+![Python](https://img.shields.io/badge/Python-3.8-3776AB?logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/Django-3.2-092E20?logo=django&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Background
-This feature was developed based on the foundational research presented in:
+[Quick Start](#-quick-start) · [Architecture](#-architecture) · [Services](#-services) · [Analysis Features](#-analysis-features) · [API](#-api-reference) · [Deployment](#-deployment) · [Docs](#-documentation)
 
-[Gardony Map Drawing Analyzer: Software for Quantitative Analyses of Sketch maps by Aaron L. Gardony, Holly A. Taylor, Tad T. Brunyé (2016)](https://link.springer.com/article/10.3758/s13428-014-0556-x)
+</div>
 
+---
 
-## Architecture
+## 📖 Overview
 
-The GMDA feature is added as an independent Django microservice that lives alongside the
-existing SketchMapia services, all orchestrated through `docker-compose`.
+SketchMapia compares hand-drawn **sketch maps** against reference **base maps** and quantifies how accurately people represent space. A central web application (the *Sketchmap Analyser*) orchestrates a family of independent Django microservices, each implementing one analysis method — from completeness and qualitative spatial relations to the **Gardony Map Drawing Analyzer (GMDA)** and **Bi-Dimensional Regression (BDR)**.
+
+Every service is containerized, published automatically to the GitHub Container Registry, and deployed behind a single HTTPS reverse proxy.
+
+## 🏗 Architecture
+
+Each analysis method lives in its own Django microservice with its own port and URL prefix, orchestrated through Docker Compose. The main application calls the services from the browser — directly via ports in local development, via Apache reverse-proxy paths in production.
 
 <p align="center">
-  <img src="./docs/images/architecture.png" alt="GMDA Architecture" width="750"/>
+  <img src="./docs/images/architecture.png" alt="Architecture" width="750"/>
 </p>
 
-
-## Key Features
-
-- **Geospatial Compatibility**:
-Directly ingests GeoJSON feature collections representing landmarks.
-- **Advanced Mode Support**:
-Implements the paper's "Advanced Mode" by using 8 peripheral points along the MBR of each landmark instead of the "Basic Mode", which uses a Single Centroid. This accurately captures both the position and the spatial extent/orientation of the drawn landmarks or objects.
-- **Robust Angular Math**:
-It uses the trigonometric summation (np.arctan2) to accurately calculate circular means, gracefully handling the $0^\circ \equiv 360^\circ$ wrap-around.
-- **Strict 1-to-1 Alignment**:
-Utilizes a Union-Find structure via a "SketchAlign" attribute to group features, filtering for strict 1-to-1 matches to prevent severe distortion of metrics.
-
-
-## Combinatorics (Advanced Mode)
-
-Since this method represents each landmark using 8 peripheral points, it generates a massive number of pairwise comparisons. To prevent the peripheral points belonging to the same landmark from being compared to one another, the total number of valid comparisons is strictly calculated.
-
-Let $n_{TL}$ be the number of total target landmarks, and $n_{DL}$ be the number of drawn sketch landmarks. The total number of pairwise comparisons ($N$) is defined as:
-
-For Total Target Landmarks ($N_{TL}$):
-
-$$N_{TL} = \binom{8n_{TL}}{2} - n_{TL}\binom{8}{2}$$
-
-For Drawn Landmarks ($N_{DL}$):
-
-$$N_{DL} = \binom{8n_{DL}}{2} - n_{DL}\binom{8}{2}$$
-
-
-## Metrics Calculated
-
-This service outputs a dictionary containing the following core spatial metrics:
-
-1. **Canonical Organization (CanOrg)**:
-Measures the overall spatial organization and topological accuracy (N/S/E/W relationships). It uses the total possible landmark pairs ($N_{TL}$) as the denominator, intentionally penalizing the score for any omitted/forgotten landmarks.
-
-$$CanOrg = \frac{\sum_{i=1}^{N_{TL}} \text{CanonicalScore}_i}{2N_{TL}}$$
-
-2. **Canonical Accuracy (CanAcc)**:
-Isolates the accuracy of the spatial layout from recall completeness. It switches the denominator to the drawn landmark pairs ($N_{DL}$), meaning it does not penalize the user for missing landmarks, only for the placement of the landmarks they did draw.
-
-$$CanAcc = \frac{\sum_{i=1}^{N_{DL}} \text{CanonicalScore}_i}{2N_{DL}}$$
-
-3. **Distance Accuracy (DistAcc)**:
-Calculates the magnitude of distance error between landmark pairs, scale-equalized and normalized to a score between 0 and 1. Let $dr_{SM}$ and $dr_{TE}$ be the distance ratios (distance divided by max distance) for the sketch map and target environment, respectively.
-
-$$DistAcc = 1 - \frac{\sum_{i=1}^{N_{DL}} |dr_{SM, i} - dr_{TE, i}|}{N_{DL}}$$
-
-
-4. **Scaling Bias (ScaBias)**:
-Tracks the directional expansion or compression of the map by evaluating scale-equalized distance ratios. Positive values indicate expansion, while negative values indicate compression.
-
-$$ScaBias = \frac{\sum_{i=1}^{N_{DL}} (dr_{SM, i} - dr_{TE, i})}{N_{DL}}$$
-
-5. **Angular Accuracy (AngAcc)**:
-Averages the absolute angular deviations ($ang_{Diff}$) between target and drawn landmark pairs. It scales the errors against the maximum possible error ($180^\circ$) to produce a normalized score between 0 and 1.
-
-$$AngAcc = 1 - \frac{\sum_{i=1}^{N_{DL}} \left| \frac{180}{\pi} ang_{Diff, i} \right|}{180 \cdot N_{DL}}$$
-
-
-6. **Rotational Bias (RotBias)**:
-Computes the circular mean of angular differences to identify systematic rotational skewing of the entire drawn map compared to the reference. Positive values indicate clockwise rotation, and negative indicate counterclockwise.
-
-$$RotBias = \frac{180}{\pi} \text{atan2}\left( \frac{\sum_{i=1}^{N_{DL}} \sin(ang_{Diff, i})}{N_{DL}}, \frac{\sum_{i=1}^{N_{DL}} \cos(ang_{Diff, i})}{N_{DL}} \right)$$
-
-
-## Data Flow
-
-The end-to-end flow from loading a project to viewing the GMDA metrics:
+### Data Flow
 
 <p align="center">
   <img src="./docs/images/dataflow.png" alt="Data Flow" width="700"/>
 </p>
 
-### Request Lifecycle
-
+<details>
+<summary><b>Request lifecycle diagram</b></summary>
 <p align="center">
   <img src="./docs/images/request_lifecycle.png" alt="Request Lifecycle" width="700"/>
 </p>
+</details>
 
+## 🧩 Services
 
-## New Features Added
+| Service | Port | URL Prefix | Purpose |
+| :--- | :---: | :--- | :--- |
+| **sketchmap_analyser** | `8000` | `/` | Main web application — sketch map editor, project management, results UI |
+| **generalizations** | `8001` | `/generalizations/` | Map generalization processing |
+| **completeness** | `8002` | `/completeness/` | Completeness analysis (recalled vs. omitted features) |
+| **qualitativerelations** | `8003` | `/accuracy/` | Qualitative spatial relations accuracy (from `accuracy/`) |
+| **validation** | `8004` | `/validation/` | Sketch map validation |
+| **gmda** | `8005` | `/gmda/` | Gardony Map Drawing Analyzer — six spatial accuracy metrics |
+| **bdr** | `8006` | `/bdr/` | Bi-Dimensional Regression — similarity-transform fit and distortion |
 
-1. **GMDA Calculator (Landmark Based)**:
+## 🚀 Quick Start
 
-Calculates the six GMDA metrics using polygon features (landmarks such as buildings) from the generalized basemap and sketchmap.
+```bash
+git clone https://github.com/ifgi-sil/SketchMapia-Microservices.git
+cd SketchMapia-Microservices
+docker-compose up --build
+```
 
-**How it works?**
-- In the **Analyse** modal, checking "Buildings GMDA" (alongside Completeness, and optionally Accuracy) triggers `runAnalysis()`, which runs the base analysis first, then automatically sends both maps as GeoJSON to the **gmda** microservice via a **POST** request to **/gmda/calculateGMDA**
-- The backend extracts all polygon features from both maps, builds 8-point MBRs for each, resolves alignment using the **SketchAlign** property, and classifies pairs into 1:1, Many:1, and Many:Many groups using Union-Find.
-- The six metrics are computed over all valid landmark pairs and returned as JSON.
-- Results are then written directly into the **Buildings GMDA** columns of the main results table.
+1. Open **http://localhost:8000/generalizingmaps/** in your browser.
+2. Load a project and click **Analyse**.
+3. In the modal, **Completeness** is always included — additionally check **Accuracy**, **Buildings GMDA**, and/or **Junctions GMDA**, then click **Run Analysis**.
+4. Results appear as grouped column sets in the results table; only the columns for selected metrics are shown.
+5. Click **Download Results** for a zip of all CSV outputs (`ResultSummary.csv`, `CompletenessDetailedOutput.csv`, `GeneralizationDetailedOutput.csv`, `QADetailedOutput.csv`, `GMDADetailedOutput.csv`).
 
-2. **Junction based GMDA Calculator**:
+## 🔬 Analysis Features
 
-Calculates the six GMDA metrics using street junction points -- the intersections of road segments -- from both maps.
+### Gardony Map Drawing Analyzer (GMDA)
+
+Implementation of the sketch map analysis method from [Gardony, Taylor & Brunyé (2016)](https://link.springer.com/article/10.3758/s13428-014-0556-x), computing six spatial accuracy metrics between a sketch map and its reference map — in two variants:
+
+- **🏠 Landmark-based** — uses polygon features (e.g. buildings). Implements the paper's *Advanced Mode*: each landmark is represented by **8 peripheral points** along its minimum bounding rectangle (instead of a single centroid), capturing position *and* spatial extent/orientation. Feature pairs are aligned via a `SketchAlign` attribute and filtered to strict 1:1 matches using a Union-Find structure.
+- **🛣 Junction-based** — uses street junctions detected from road-segment endpoints that coincide across two or more segments. Sketch junctions are matched to base junctions via a **topological subset check** on shared road IDs.
 
 <p align="center">
   <img src="./docs/images/junction_matching.png" alt="Junction Matching Logic" width="650"/>
 </p>
 
-**How it works?**
-- In the **Analyse** modal, checking "Junctions GMDA" causes `runAnalysis()` to send both maps as **GeoJSON** to **/gmda/calculateJunctionGMDA** after the base analysis completes.
-- The backend detects junctions by finding road endpoints that share the same coordinate (rounded to 3 decimal places) across two or more line segments.
-- For the basemap, all junctions are considered for **nTL** (total landmarks). For the sketchmap, only junctions formed by road IDs shared with the base maps are used.
-- Junctions are matched between maps using a **topological subset check**: a sketch junction matches a base junction if all road IDs at the sketch junction are a subset of the road IDs at the base junction.
-- Matched pairs are classified using the same Union-Find grouping as landmarks, and the six metrics are computed and returned, then written into the **Junctions GMDA** columns of the main results table.
+| Metric | Measures | Penalizes omissions? |
+| :--- | :--- | :---: |
+| **CanOrg** | Canonical organization — overall N/S/E/W topological accuracy | ✅ |
+| **CanAcc** | Canonical accuracy — layout accuracy of drawn landmarks only | ❌ |
+| **DistAcc** | Distance accuracy — normalized pairwise distance error | ❌ |
+| **ScaBias** | Scaling bias — systematic expansion (+) or compression (−) | ❌ |
+| **AngAcc** | Angular accuracy — normalized pairwise angular error | ❌ |
+| **RotBias** | Rotational bias — systematic clockwise (+) / counterclockwise (−) rotation | ❌ |
 
-## New Microservice: **gmda**
+<details>
+<summary><b>📐 Metric formulas & combinatorics</b></summary>
 
-A new Django microservice was added following the same architecture as the existing services (**completeness, accuracy, generalizations**).
+#### Combinatorics (Advanced Mode)
 
-```text
-gmda/
-├── Dockerfile                  # runs on port 8005
-├── requirements.txt            # Django, numpy, shapely
-├── manage.py
-├── gmda/
-│   ├── settings.py
-│   ├── urls.py                 # routes /gmda/ to microservice/urls.py
-│   ├── wsgi.py
-│   └── asgi.py
-└── microservice/
-    ├── urls.py                 # maps endpoints to views
-    └── views.py                # all GMDA logic lives here
-```
+With 8 peripheral points per landmark, comparisons between points of the *same* landmark must be excluded. For $n_{TL}$ target landmarks and $n_{DL}$ drawn landmarks:
 
-### Endpoints
+$$N_{TL} = \binom{8n_{TL}}{2} - n_{TL}\binom{8}{2} \qquad N_{DL} = \binom{8n_{DL}}{2} - n_{DL}\binom{8}{2}$$
+
+#### Formulas
+
+**Canonical Organization** — uses all target pairs as denominator, so omitted landmarks lower the score:
+
+$$CanOrg = \frac{\sum_{i=1}^{N_{TL}} \text{CanonicalScore}_i}{2N_{TL}}$$
+
+**Canonical Accuracy** — denominator switches to drawn pairs, isolating layout accuracy from recall:
+
+$$CanAcc = \frac{\sum_{i=1}^{N_{DL}} \text{CanonicalScore}_i}{2N_{DL}}$$
+
+**Distance Accuracy** — with $dr_{SM}, dr_{TE}$ the scale-equalized distance ratios of sketch map and target environment:
+
+$$DistAcc = 1 - \frac{\sum_{i=1}^{N_{DL}} |dr_{SM, i} - dr_{TE, i}|}{N_{DL}}$$
+
+**Scaling Bias** — signed version of the same comparison:
+
+$$ScaBias = \frac{\sum_{i=1}^{N_{DL}} (dr_{SM, i} - dr_{TE, i})}{N_{DL}}$$
+
+**Angular Accuracy** — absolute angular deviations scaled against the maximum error of $180^\circ$:
+
+$$AngAcc = 1 - \frac{\sum_{i=1}^{N_{DL}} \left| \frac{180}{\pi} ang_{Diff, i} \right|}{180 \cdot N_{DL}}$$
+
+**Rotational Bias** — circular mean via trigonometric summation (`np.arctan2`), gracefully handling the $0^\circ \equiv 360^\circ$ wrap-around:
+
+$$RotBias = \frac{180}{\pi} \text{atan2}\left( \frac{\sum_{i=1}^{N_{DL}} \sin(ang_{Diff, i})}{N_{DL}}, \frac{\sum_{i=1}^{N_{DL}} \cos(ang_{Diff, i})}{N_{DL}} \right)$$
+
+</details>
+
+### Bi-Dimensional Regression (BDR)
+
+A second, independent accuracy method: BDR fits a **similarity transform** (uniform scale, rotation, translation) that best maps the base-map configuration onto the sketch-map configuration by least squares, then measures the residual distortion. It reuses GMDA's 8-point MBR extraction and `SketchAlign` 1:1 alignment pipeline, and comes in the same **Landmarks** / **Junctions** split.
+
+| Metric | Meaning |
+| :--- | :--- |
+| **r** | Bidimensional correlation — goodness-of-fit of the similarity transform |
+| **DI** | Distortion Index — $100\sqrt{1 - r^2}$ |
+| **phi** | Fitted uniform scale factor |
+| **theta** | Fitted rotation (degrees) |
+| **alpha1, alpha2** | Fitted x/y translation |
+
+➡️ Full derivations and implementation notes: [`bdr/README.md`](bdr/README.md)
+
+## 📡 API Reference
+
+Both analysis services accept two GeoJSON feature collections and return metrics as JSON.
 
 | Endpoint | Method | Description |
 | :--- | :---: | :--- |
-| `/gmda/calculateGMDA/` | **POST** | Landmark-based GMDA |
-| `/gmda/calculateJunctionGMDA/` | **POST** | Junction-based GMDA |
+| `/gmda/calculateGMDA/` | `POST` | Landmark-based GMDA |
+| `/gmda/calculateJunctionGMDA/` | `POST` | Junction-based GMDA |
+| `/bdr/calculateLandmarksBDR/` | `POST` | Landmark-based BDR |
+| `/bdr/calculateJunctionsBDR/` | `POST` | Junction-based BDR |
 
-### Request Format (Both Endpoints)
+<details>
+<summary><b>Request / response format</b></summary>
+
+**Request** (both services):
 
 ```text
 POST /gmda/calculateGMDA/
@@ -166,7 +167,7 @@ Content-Type: application/x-www-form-urlencoded
 basemapdata=[GeoJSON string]&sketchmapdata=[GeoJSON string]
 ```
 
-### Response Format
+**Response** (GMDA example):
 
 ```json
 {
@@ -181,40 +182,40 @@ basemapdata=[GeoJSON string]&sketchmapdata=[GeoJSON string]
 }
 ```
 
----
+</details>
 
-## Changes to Existing Files
+## 🚢 Deployment
 
-| File | Change |
+Production runs on prebuilt images, not source builds:
+
+1. **CI** — every push to `main` triggers [`registry-build-publish.yml`](.github/workflows/registry-build-publish.yml), building and pushing all service images to `ghcr.io/ifgi-sil/<service>:latest`.
+2. **Server** — [`docker-compose.server.yml`](docker-compose.server.yml) pulls those images; [Watchtower](https://containrrr.dev/watchtower/) polls the registry and auto-updates running containers.
+3. **Reverse proxy** — an Apache vhost ([reference copy](docs/apache-sketchmapia-ssl.conf)) terminates TLS on 443 and proxies each `/service/` path to its localhost port. Service ports are never exposed externally.
+
+Adding a new microservice touches six places (service code, both compose files, CI workflow, frontend port map, Apache vhost) — follow the step-by-step checklist in [**docs/adding-a-new-service.md**](docs/adding-a-new-service.md).
+
+## 📚 Documentation
+
+| Document | Contents |
 | :--- | :--- |
-| `docker-compose.yml` | Added `gmda` service on port 8005. |
-| `sketchmap_analyser/static/js/project.js` | Added `gmda: 8005` to port map; added `computeGMDAFromAllGenBaseMap()` and `computeJunctionGMDAFromAllGenBaseMap()`; results are written into `genResultArray` (including `nTL`/`nDL`, and `Junc_`-prefixed fields for junctions) and rendered via `populateGMDAResults()` into the main results table; `ResultSummary.csv` export extended with 12 GMDA columns; added a new `GMDADetailedOutput.csv` export containing nTL/nDL and all six metrics for both Buildings and Junctions. |
-| `sketchmap_analyser/templates/generalizingmaps.html` | Replaced the standalone GMDA Calculator dropdown with an **Analyse** modal (`#analyseModal`) containing checkboxes: Completeness (locked on), Accuracy, Buildings GMDA, Junctions GMDA. |
-| `sketchmap_analyser/templates/results.html` | Merged GMDA metrics into the main results table (`#OrderingofMaps`) as two grouped column sets ("Buildings GMDA", "Junctions GMDA") with a 2-row `<thead>`, replacing the separate GMDA Summary panel. Result window enlarged and given a sticky header. |
-| `sketchmap_analyser/static/js/sketchmapeditor.js` | Added `openAnalyseModal()`, `closeAnalyseModal()`, and `runAnalysis()`, which sequences Completeness → Accuracy → Buildings GMDA → Junctions GMDA based on the modal's checkboxes, and toggles `hide-accuracy`/`hide-buildings`/`hide-junctions` classes on the results table to show only the selected columns. |
-| `sketchmap_analyser/static/css/main.css` | Added modal styling (matching the existing menu button theme) and column show/hide rules (`.hide-accuracy`, `.hide-buildings`, `.hide-junctions`) plus sticky header rules for the results table. |
-| `generalizations/generalizations/settings.py` | Fixed CORS configuration. |
+| [`docs/adding-a-new-service.md`](docs/adding-a-new-service.md) | Checklist for adding a microservice, with deploy procedure and failure symptoms |
+| [`docs/apache-sketchmapia-ssl.conf`](docs/apache-sketchmapia-ssl.conf) | Reference copy of the production Apache vhost |
+| [`docker-compose.server.yml`](docker-compose.server.yml) | Reference copy of the production compose file |
+| [`docs/gmda-integration-notes.md`](docs/gmda-integration-notes.md) | GMDA implementation details and integration change log |
+| [`bdr/README.md`](bdr/README.md) | BDR method background, formulas, and implementation details |
 
----
+## 📄 Research Background
 
-## Usage
+- Gardony, A. L., Taylor, H. A., & Brunyé, T. T. (2016). *Gardony Map Drawing Analyzer: Software for quantitative analysis of sketch maps.* Behavior Research Methods, 48, 151–177. [doi:10.3758/s13428-014-0556-x](https://link.springer.com/article/10.3758/s13428-014-0556-x)
+- Bi-Dimensional Regression as introduced for cognitive-map comparison by Tobler and formalized by Friedman & Kohler (2003).
 
-1. **Start all services:**
-   ```bash
-   docker-compose up --build
-   ```
-   > For server deployment, use [`docker-compose.server.yml`](docker-compose.server.yml) instead — it pulls the prebuilt images from GHCR (published automatically on push to `main`) rather than building from source. The Apache vhost is kept as a reference copy in [`docs/apache-sketchmapia-ssl.conf`](docs/apache-sketchmapia-ssl.conf), and the full checklist for adding a service is in [`docs/adding-a-new-service.md`](docs/adding-a-new-service.md).
-2. Open `http://localhost:8000/generalizingmaps/` in your browser.
-3. Load a project and click **Analyse**.
-4. In the modal, Completeness is always included. Check **Accuracy**, **Buildings GMDA**, and/or **Junctions GMDA** for whichever metrics you also want, then click **Run Analysis**.
-5. Results appear as columns in the results table: Completeness/Generalization/Qualitative Accuracy on the left, with **Buildings GMDA** and **Junctions GMDA** grouped in their own column sets on the right. Only the columns for metrics you selected are shown; the rest stay hidden.
-6. Click **Download Results** to get a zip containing `CompletenessDetailedOutput.csv`, `ResultSummary.csv` (now including all 12 GMDA columns), `GeneralizationDetailedOutput.csv`, `QADetailedOutput.csv`, and a new `GMDADetailedOutput.csv` with `nTL`/`nDL` plus all six metrics for both Buildings and Junctions.
+## 🤝 Contributors
 
----
+The GMDA and BDR features were built with the help of:
 
-## Contributors
+- Clement Amirault — [@CL-77](https://github.com/CL-77)
+- Ajay — [@ajay-sheokand](https://github.com/ajay-sheokand)
 
-A massive thank you to everyone who helped build the GMDA Calculator!
+## ⚖️ License
 
-- Clement Amirault [CL-77](https://github.com/CL-77)
-- Ajay [ajay-sheokand](https://github.com/ajay-sheokand)
+Released under the [MIT License](LICENSE) © 2023 Spatial Intelligence Lab, Institute for Geoinformatics, University of Münster.
