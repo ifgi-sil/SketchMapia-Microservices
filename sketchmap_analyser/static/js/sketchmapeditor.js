@@ -2511,7 +2511,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function toggleShowMoreGMDA() {
     const panel = document.getElementById('showMoreOptionsGMDA');
-    const arrow = document.getElementById('showMoreArrow');
+    const arrow = document.getElementById('showMoreArrowGMDA');
     const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
 
     if (isOpen) {
@@ -2539,7 +2539,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function toggleShowMoreJuncGMDA() {
     const panel = document.getElementById('showMoreOptionsJunctionsGMDA');
-    const arrow = document.getElementById('showMoreArrow');
+    const arrow = document.getElementById('showMoreArrowJuncGMDA');
     const isOpen = panel.style.maxHeight && panel.style.maxHeight !== '0px';
 
     if (isOpen) {
