@@ -71,3 +71,21 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ghcr.io/${{ env.owner_lc }}/sketchmap_analyser:latest
+
+      - name: Build and Push gmda
+        uses: docker/build-push-action@v5
+        with:
+          context: ./gmda
+          file: ./gmda/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ env.owner_lc }}/gmda:latest
+
+      - name: Build and Push bdr
+        uses: docker/build-push-action@v5
+        with:
+          context: ./bdr
+          file: ./bdr/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ env.owner_lc }}/bdr:latest
