@@ -176,8 +176,7 @@ async function computeGMDAFromAllGenBaseMap() {
         }
     }
     $('#loading-spinner').hide();
-    $('#summary_result_div').prop("style", 
-        "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    showSummaryPanel();
     populateGMDAResults();
 }
 
@@ -289,8 +288,7 @@ async function computeJunctionGMDAFromAllGenBaseMap() {
     }
 
     $('#loading-spinner').hide();
-    $('#summary_result_div').prop("style",
-        "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    showSummaryPanel();
     populateGMDAResults();
 }
 
@@ -332,8 +330,7 @@ async function bdrLandmarksFromAllGenBaseMap() {
         }
     }
     $('#loading-spinner').hide();
-    $('#summary_result_div').prop("style", 
-        "height:500px; overflow:auto; max-width:1600px; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    showSummaryPanel();
     populateBDRResults();
 }
 
@@ -375,8 +372,7 @@ async function bdrJunctionsFromAllGenBaseMap() {
         }
     }
     $('#loading-spinner').hide();
-    $('#summary_result_div').prop("style", 
-        "height:500px; overflow:auto; max-width:1600px; visibility:visible; position:absolute; z-index:10000000; background-color:white");
+    showSummaryPanel();
     populateBDRResults();
 }
 
@@ -733,8 +729,7 @@ try {
 
     const fixedIndex = index;
 
-    $('#summary_result_div').prop("style", "height:500px; width:1200px; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
-
+    showSummaryPanel();
     const GenBasemapjson = await generalizedMapExtract(
       fixedIndex,
       currentsketchMap,
@@ -1688,4 +1683,11 @@ function populateBDRResults() {
             cells[rowIndex][27].innerHTML = g.Junc_alpha2;
         }
     });
+}
+
+
+
+function showSummaryPanel() {
+    $('#summary_result_div').prop("style",
+        "height:80vh; width:95vw; max-width:1600px; overflow:auto; visibility:visible; position:absolute; z-index:10000000; background-color:white");
 }
