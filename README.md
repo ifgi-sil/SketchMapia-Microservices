@@ -203,7 +203,7 @@ basemapdata=[GeoJSON string]&sketchmapdata=[GeoJSON string]
    ```bash
    docker-compose up --build
    ```
-   > For server deployment, use [`docker-compose.server.yml`](docker-compose.server.yml) instead — it pulls the prebuilt images from GHCR (published automatically on push to `main`) rather than building from source.
+   > For server deployment, use [`docker-compose.server.yml`](docker-compose.server.yml) instead — it pulls the prebuilt images from GHCR (published automatically on push to `main`) rather than building from source. The Apache vhost is kept as a reference copy in [`docs/apache-sketchmapia-ssl.conf`](docs/apache-sketchmapia-ssl.conf), and the full checklist for adding a service is in [`docs/adding-a-new-service.md`](docs/adding-a-new-service.md).
 2. Open `http://localhost:8000/generalizingmaps/` in your browser.
 3. Load a project and click **Analyse**.
 4. In the modal, Completeness is always included. Check **Accuracy**, **Buildings GMDA**, and/or **Junctions GMDA** for whichever metrics you also want, then click **Run Analysis**.
