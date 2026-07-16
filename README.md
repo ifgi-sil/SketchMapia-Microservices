@@ -56,15 +56,6 @@ $$N_{DL} = \binom{8n_{DL}}{2} - n_{DL}\binom{8}{2}$$
 
 This service outputs a dictionary containing the following core spatial metrics:
 
-| Metric | Measures | Penalizes omissions? |
-| :--- | :--- | :---: |
-| **CanOrg** | Topological organization (N/S/E/W) |  ❌No ($N_{TL}$ + 0, if Omitted) |
-| **CanAcc** | Spatial layout accuracy | ❌ No ($N_{DL}$ + 0, if Omitted) |
-| **DistAcc** | Distance error magnitude | ❌ No |
-| **ScaBias** | Expansion (+) / compression (−) | — |
-| **AngAcc** | Angular deviation accuracy | ❌ No |
-| **RotBias** | Systematic rotation (ClockWise + / CounterClockWise −) | — |
-
 1. **Canonical Organization (CanOrg)**:
 Measures the overall spatial organization and topological accuracy (N/S/E/W relationships). It uses the total possible landmark pairs ($N_{TL}$) as the denominator, intentionally penalizing the score for any omitted/forgotten landmarks.
 
