@@ -1,8 +1,9 @@
 <div id="summary_result_div" class="w3-card-4 w3-round" style = "height : 500px ; width : 1200px; overflow : auto; visibility: hidden ; position:absolute ; z-index:10000000">
     <header class="w3-panel w3-round w3-teal" style="position: relative; padding: 0px;margin: 0px">
-        <h4 style="padding-top:5px;margin-left: 3px "><span><b> Result Summary</b></span>
-            <button id="close_bnt" aria-label="Close Account Info Modal Box" style="float: right"
-                    onclick="document.getElementById('summary_result_div').style.display='none'">&times;
+        <h4 style="padding-top:5px;margin-left: 3px ">
+            <span><b> Result Summary</b></span>
+            <button id="close_bnt" aria-label="Close Account Info Modal Box" style="font-size: 10px;" 
+                    onclick="document.getElementById('summary_result_div').style.display='none'">Close &times;
             </button>
         </h4>
     </header>
@@ -119,7 +120,7 @@
         <div id="loading-spinner" style="display:none;">
             <div class="loader"></div>
         </div>
-        <div style="padding: 2px; text-align: right; position: sticky; left: 0; width: 100%;">
+        <div style="padding: 2px; text-align: left; position: sticky; left: 0; width: 100%;">
             <a id="exportAsCSV" type="button" class="btn btn-outline-info btn-file btn-sm">
             Download Results
             </a>
