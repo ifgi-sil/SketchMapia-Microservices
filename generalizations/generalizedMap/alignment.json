@@ -2,619 +2,7 @@
     "1": {
         "BaseAlign": {
             "0": [
-                46
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S0"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "2": {
-        "BaseAlign": {
-            "0": [
-                42,
-                44
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S1"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.5
-    },
-    "3": {
-        "BaseAlign": {
-            "0": [
-                34
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S2"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "4": {
-        "BaseAlign": {
-            "0": [
-                35
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S3"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "5": {
-        "BaseAlign": {
-            "0": [
-                122,
-                123,
-                124,
-                125
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S4"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.75
-    },
-    "6": {
-        "BaseAlign": {
-            "0": [
-                0
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S5"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "7": {
-        "BaseAlign": {
-            "0": [
-                2,
-                7
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S6"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.5
-    },
-    "8": {
-        "BaseAlign": {
-            "0": [
-                32
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S7"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "9": {
-        "BaseAlign": {
-            "0": [
-                30
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S8"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "10": {
-        "BaseAlign": {
-            "0": [
-                28,
-                29
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S9"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.5
-    },
-    "11": {
-        "BaseAlign": {
-            "0": [
-                45
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S10"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "12": {
-        "BaseAlign": {
-            "0": [
-                128,
-                130,
-                131,
-                132,
-                126,
-                127
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S11"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.8333333333333334
-    },
-    "13": {
-        "BaseAlign": {
-            "0": [
-                11
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S12"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "14": {
-        "BaseAlign": {
-            "0": [
-                59
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S13"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "15": {
-        "BaseAlign": {
-            "0": [
-                84,
-                85,
-                86,
-                87,
-                88,
-                89,
-                90,
-                91,
-                92,
-                93,
-                94,
-                95,
-                96,
-                97,
-                98,
-                99,
-                100,
-                101,
-                102,
-                103,
-                104,
-                105,
-                106,
-                107,
-                108
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S14"
-            ]
-        },
-        "genType": "Amalgamation",
-        "degreeOfGeneralization": 0.96
-    },
-    "16": {
-        "BaseAlign": {
-            "0": [
-                120,
-                121
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S15"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.5
-    },
-    "17": {
-        "BaseAlign": {
-            "0": [
-                144,
-                142
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S16"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.5
-    },
-    "18": {
-        "BaseAlign": {
-            "0": [
-                114
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S17"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "19": {
-        "BaseAlign": {
-            "0": [
-                12
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S18"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "20": {
-        "BaseAlign": {
-            "0": [
-                14
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S19"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "21": {
-        "BaseAlign": {
-            "0": [
-                15
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S20"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "22": {
-        "BaseAlign": {
-            "0": [
-                109,
-                110
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S21"
-            ]
-        },
-        "genType": "OmissionMerge",
-        "degreeOfGeneralization": 0.5
-    },
-    "23": {
-        "BaseAlign": {
-            "0": [
-                9
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S22"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "24": {
-        "BaseAlign": {
-            "0": [
-                38
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S23"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "25": {
-        "BaseAlign": {
-            "0": [
-                20
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S24"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "26": {
-        "BaseAlign": {
-            "0": [
-                8
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S25"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "27": {
-        "BaseAlign": {
-            "0": [
-                21
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S26"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "28": {
-        "BaseAlign": {
-            "0": [
-                27
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S27"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "29": {
-        "BaseAlign": {
-            "0": [
-                51
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S28"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "30": {
-        "BaseAlign": {
-            "0": [
-                50
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S29"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "31": {
-        "BaseAlign": {
-            "0": [
-                49
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S30"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "32": {
-        "BaseAlign": {
-            "0": [
-                48
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S31"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "33": {
-        "BaseAlign": {
-            "0": [
-                57
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S32"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "34": {
-        "BaseAlign": {
-            "0": [
-                69
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S33"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "35": {
-        "BaseAlign": {
-            "0": [
-                25
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S34"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "36": {
-        "BaseAlign": {
-            "0": [
-                23
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S35"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "37": {
-        "BaseAlign": {
-            "0": [
-                24
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S36"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "38": {
-        "BaseAlign": {
-            "0": [
-                26
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S37"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "39": {
-        "BaseAlign": {
-            "0": [
-                13
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S38"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "40": {
-        "BaseAlign": {
-            "0": [
-                72
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S39"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "41": {
-        "BaseAlign": {
-            "0": [
-                70
-            ]
-        },
-        "SketchAlign": {
-            "0": [
-                "S40"
-            ]
-        },
-        "genType": "No generalization",
-        "degreeOfGeneralization": 0
-    },
-    "42": {
-        "BaseAlign": {
-            "0": [
-                71
+                73
             ]
         },
         "SketchAlign": {
@@ -625,5 +13,281 @@
         "genType": "No generalization",
         "degreeOfGeneralization": 0
     },
-    "checkAlignnum": 44
+    "2": {
+        "BaseAlign": {
+            "0": [
+                64,
+                61,
+                62,
+                63
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S9"
+            ]
+        },
+        "genType": "Amalgamation",
+        "degreeOfGeneralization": 0.75
+    },
+    "3": {
+        "BaseAlign": {
+            "0": [
+                66
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S7"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "4": {
+        "BaseAlign": {
+            "0": [
+                65
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S5"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "5": {
+        "BaseAlign": {
+            "0": [
+                59
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S11"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "6": {
+        "BaseAlign": {
+            "0": [
+                34,
+                35
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S27"
+            ]
+        },
+        "genType": "OmissionMerge",
+        "degreeOfGeneralization": 0.5
+    },
+    "7": {
+        "BaseAlign": {
+            "0": [
+                15
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S35"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "8": {
+        "BaseAlign": {
+            "0": [
+                78
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S29"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "9": {
+        "BaseAlign": {
+            "0": [
+                45,
+                46,
+                47
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S31"
+            ]
+        },
+        "genType": "OmissionMerge",
+        "degreeOfGeneralization": 0.6666666666666666
+    },
+    "10": {
+        "BaseAlign": {
+            "0": [
+                8
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S37"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "11": {
+        "BaseAlign": {
+            "0": [
+                11
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S33"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "12": {
+        "BaseAlign": {
+            "0": [
+                33
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S1"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "13": {
+        "BaseAlign": {
+            "0": [
+                16,
+                26,
+                43,
+                44
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S23"
+            ]
+        },
+        "genType": "OmissionMerge",
+        "degreeOfGeneralization": 0.75
+    },
+    "14": {
+        "BaseAlign": {
+            "0": [
+                32
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S25"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "15": {
+        "BaseAlign": {
+            "0": [
+                67
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S15"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "16": {
+        "BaseAlign": {
+            "0": [
+                48
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S13"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "17": {
+        "BaseAlign": {
+            "0": [
+                0
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S21"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "18": {
+        "BaseAlign": {
+            "0": [
+                2
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S19"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "19": {
+        "BaseAlign": {
+            "0": [
+                53
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S17"
+            ]
+        },
+        "genType": "No generalization",
+        "degreeOfGeneralization": 0
+    },
+    "20": {
+        "BaseAlign": {
+            "0": [
+                9,
+                10
+            ]
+        },
+        "SketchAlign": {
+            "0": [
+                "S39"
+            ]
+        },
+        "genType": "OmissionMerge",
+        "degreeOfGeneralization": 0.5
+    },
+    "checkAlignnum": 25
 }
