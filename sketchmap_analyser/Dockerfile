@@ -4,6 +4,15 @@ FROM python:3.8.20
 # Set environment variables
 ENV PYTHONUNBUFFERED 1
 
+# Build metadata injected by CI (.github/workflows/registry-build-publish.yml);
+# shown as the version badge in the UI. Empty in local dev builds.
+ARG GIT_TAG=""
+ARG GIT_SHA=""
+ARG GIT_COMMIT_DATE=""
+ENV GIT_TAG=$GIT_TAG
+ENV GIT_SHA=$GIT_SHA
+ENV GIT_COMMIT_DATE=$GIT_COMMIT_DATE
+
 # RUN mkdir /app
 
 # Set the working directory

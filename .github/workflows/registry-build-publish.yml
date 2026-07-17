@@ -12,10 +12,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags, needed for git describe
 
-      - name: Set lowercase owner
+      - name: Set lowercase owner and version info
         id: vars
-        run: echo "owner_lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+        run: |
+          echo "owner_lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+          echo "git_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo '')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -63,15 +67,6 @@ jobs:
           push: true
           tags: ghcr.io/${{ env.owner_lc }}/qualitativerelations:latest
 
-      - name: Build and Push sketchmap_analyser
-        uses: docker/build-push-action@v5
-        with:
-          context: ./sketchmap_analyser
-          file: ./sketchmap_analyser/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ghcr.io/${{ env.owner_lc }}/sketchmap_analyser:latest
-
       - name: Build and Push gmda
         uses: docker/build-push-action@v5
         with:
@@ -89,3 +84,16 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ghcr.io/${{ env.owner_lc }}/bdr:latest
+
+      - name: Build and Push sketchmap_analyser
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sketchmap_analyser
+          file: ./sketchmap_analyser/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ env.owner_lc }}/sketchmap_analyser:latest
+          build-args: |
+            GIT_TAG=${{ env.git_tag }}
+            GIT_SHA=${{ github.sha }}
+            GIT_COMMIT_DATE=${{ github.event.head_commit.timestamp }}
