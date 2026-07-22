@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.pyc
+#the above .pyc is so that the cache files are not tracked.
+
 
 # Virtual environments
 venv/
