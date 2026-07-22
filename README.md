@@ -28,9 +28,51 @@ Every service is containerized, published automatically to the GitHub Container 
 
 Each analysis method lives in its own Django microservice with its own port and URL prefix, orchestrated through Docker Compose. The main application calls the services from the browser — directly via ports in local development, via Apache reverse-proxy paths in production.
 
-<p align="center">
+<!---<p align="center">
   <img src="./docs/images/architecture_sketchmapia.png" alt="Architecture for Sketchmapia" width="750"/>
-</p>
+</p>-->
+
+```mermaid
+flowchart TB
+subgraph Browser["Browser - localhost:8000"]
+HTML["generalizingmaps.html"]
+Analyzer["sketchmap analyzer (Web Page)"]
+JS["project.js"]
+Result["Result Summary Table with selected metrics"]
+end
+
+subgraph Container["SketchMapia Microservices Container"]
+    GenMaps["Generalized Maps (Basemap & Sketchmaps)"]
+    Gen["generalizations : 8001"]
+    Comp["completeness : 8002"]
+    Acc["accuracy / qualitativerelations : 8003"]
+    Val["validation : 8004"]
+    Gmda["gmda : 8005"]
+    Bdr["bdr : 8006"]
+    Boundary["Container Boundary"]
+
+    GenMaps -- creates --> Gen
+    GenMaps --> Comp
+    GenMaps --> Acc
+    GenMaps --> Bdr
+    GenMaps --> Gmda
+
+    Boundary -. compulsory .-> Comp
+    Boundary -. compulsory .-> Gen
+
+    Comp -. output .-> Boundary
+    Acc -. output .-> Boundary
+    Gen -. output .-> Boundary
+    Gmda -. output .-> Boundary
+    Bdr -. output .-> Boundary
+end
+
+HTML --> Analyzer
+Analyzer -- "Selected microservices" --> Boundary
+Analyzer -- "sends the data" --> JS
+Boundary -- "JSON metrics for selected microservices" --> JS
+JS --> Result
+```
 
 ### Request Lifecycle
 ```mermaid

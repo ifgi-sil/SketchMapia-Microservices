@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <title>Documentation — Sketch Map Analyser</title>
+  <style>
+    :root {
+      --green: #7AB629;
+      --green-dark: #256428;
+      --green-pale: #f2f8e9;
+      --ink: #333;
+      --muted: #6b7280;
+      --line: #e2e8dc;
+      --ease: cubic-bezier(.16,.84,.44,1);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+    body {
+      margin: 0; font-family: 'Mulish';
+      background-color: #f4f6f8; color: var(--ink); line-height: 1.65;
+    }
+
+    #progress {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+      background: linear-gradient(90deg, var(--green), var(--green-dark));
+      z-index: 999; transition: width .1s linear;
+    }
+
+    header {
+      background-color: var(--green); padding: 10px 20px;
+      display: flex; justify-content: space-between; align-items: center; position: relative;
+    }
+    .header-left img { height: 40px; }
+    .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+    .header-center img { height: 80px; }
+    #SILlogo { height: 80px; width: auto; }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      background: linear-gradient(160deg, #ffffff 0%, var(--green-pale) 100%);
+      border-bottom: 1px solid var(--line);
+      padding: 55px 20px 48px 20px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: ''; position: absolute;
+      width: 420px; height: 420px; right: -140px; top: -180px;
+      background: radial-gradient(circle, rgba(122,182,41,.14) 0%, rgba(122,182,41,0) 70%);
+      border-radius: 50%; animation: float 14s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100% { transform: translate(0,0);} 50% { transform: translate(-24px,20px);} }
+    .hero h1 { margin: 0 0 6px 0; font-size: 2.5em; font-weight: 800; color: var(--green-dark); position: relative; }
+    .hero .tagline { font-size: 1.28em; font-weight: 700; color: var(--green); margin: 0 0 10px 0; position: relative; }
+    .hero .subtitle { font-size: 1.02em; color: var(--muted); margin: 0 auto; max-width: 660px; position: relative; }
+    .hero .fade-seq { opacity: 0; transform: translateY(14px); animation: heroIn .8s var(--ease) forwards; }
+    .hero .fade-seq:nth-child(1) { animation-delay: .05s; }
+    .hero .fade-seq:nth-child(2) { animation-delay: .20s; }
+    .hero .fade-seq:nth-child(3) { animation-delay: .35s; }
+    @keyframes heroIn { to { opacity: 1; transform: translateY(0);} }
+
+    /* ---------- STICKY NAV ---------- */
+    #secnav {
+      position: sticky; top: 0; z-index: 900;
+      background: rgba(255,255,255,.94); backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto; white-space: nowrap; scrollbar-width: thin;
+    }
+    #secnav .inner { max-width: 1040px; margin: auto; padding: 0 20px; display: flex; gap: 4px; }
+    #secnav a {
+      display: inline-block; padding: 12px 12px 10px 12px;
+      font-size: .86em; font-weight: 700; color: var(--muted);
+      text-decoration: none; border-bottom: 3px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    #secnav a:hover { color: var(--green-dark); }
+    #secnav a.active { color: var(--green-dark); border-bottom-color: var(--green); }
+
+    .main-container { padding: 10px 20px 70px 20px; margin: auto; width: 80%; max-width: 1040px; }
+
+    .tiny-bar {
+      width: 100px; height: 4px; background-color: var(--green);
+      margin-top: 50px; margin-bottom: 10px;
+      transform-origin: left; transition: width .5s var(--ease);
+    }
+    section:hover > .tiny-bar { width: 150px; }
+
+    h2 { color: var(--ink); margin-top: 18px; font-size: 1.6em; }
+    h3 { color: var(--green-dark); margin-bottom: 5px; margin-top: 28px; }
+    h4 { color: var(--green-dark); }
+    a { color: var(--green); }
+    .lead { font-size: 1.08em; }
+    .breadcrumb { margin-top: 16px; font-size: .9em; }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .65s var(--ease), transform .65s var(--ease); }
+    .reveal.in { opacity: 1; transform: none; }
+    .reveal.d1 { transition-delay: .08s; }
+    .reveal.d2 { transition-delay: .16s; }
+    .reveal.d3 { transition-delay: .24s; }
+
+    /* ---------- STEPS ---------- */
+    .steps { display: flex; gap: 16px; flex-wrap: wrap; margin: 26px 0; }
+    .step {
+      flex: 1 1 240px; background: #fff; border: 1px solid var(--line);
+      border-top: 4px solid var(--green); border-radius: 6px; padding: 20px;
+      transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+    }
+    .step:hover { transform: translateY(-6px); box-shadow: 0 12px 26px rgba(37,100,40,.13); }
+    .step .num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--green); color: #fff; font-weight: 800; font-size: .9em; margin-bottom: 8px;
+      transition: transform .35s var(--ease), background .3s;
+    }
+    .step:hover .num { transform: scale(1.15) rotate(-8deg); background: var(--green-dark); }
+    .step h4 { margin: 4px 0 6px 0; font-size: 1.06em; }
+    .step p { margin: 0; font-size: .93em; color: #555; }
+    .step .q {
+      display: inline-block; margin-top: 12px; font-size: .82em;
+      color: var(--green-dark); background: var(--green-pale);
+      padding: 3px 10px; border-radius: 20px; font-weight: 700;
+    }
+
+    /* ---------- GLOSSARY ---------- */
+    .glossary { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; margin: 22px 0; }
+    .gl {
+      background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px;
+      transition: transform .28s var(--ease), box-shadow .28s var(--ease);
+    }
+    .gl:hover { transform: translateY(-4px); box-shadow: 0 10px 22px rgba(37,100,40,.10); }
+    .gl strong { color: var(--green-dark); display: block; margin-bottom: 3px; }
+    .gl p { margin: 0; font-size: .91em; color: #555; }
+
+    /* ---------- METRIC CARDS ---------- */
+    .metric {
+      background: #fff; border: 1px solid var(--line);
+      border-left: 4px solid var(--green); border-radius: 0 6px 6px 0;
+      padding: 18px 22px; margin: 16px 0;
+      transition: box-shadow .28s var(--ease);
+    }
+    .metric:hover { box-shadow: 0 8px 20px rgba(37,100,40,.09); }
+    .metric h4 { margin: 0 0 4px 0; font-size: 1.12em; }
+    .metric .range {
+      display: inline-block; background: var(--green-pale); color: var(--green-dark);
+      border: 1px solid #d6e6bf; border-radius: 20px;
+      padding: 2px 12px; font-size: .78em; font-weight: 700; margin-bottom: 10px;
+    }
+    .metric p { margin: 8px 0; }
+    .metric .plain { font-size: 1.0em; }
+    .metric .interp {
+      background: var(--green-pale); border-radius: 5px;
+      padding: 10px 14px; margin-top: 10px; font-size: .92em;
+    }
+    .metric .interp strong { color: var(--green-dark); }
+    .metric .watch {
+      background: #fff8e1; border-left: 3px solid #e6b800;
+      padding: 9px 13px; margin-top: 10px; font-size: .9em; border-radius: 0 5px 5px 0;
+    }
+
+    table {
+      border-collapse: collapse; width: 100%; margin: 15px 0;
+      background: #fff; font-size: .92em; border-radius: 6px; overflow: hidden;
+    }
+    th, td { border: 1px solid #ddd; padding: 9px 11px; text-align: left; vertical-align: top; }
+    th { background: var(--green); color: #fff; font-weight: 700; }
+    table tr:nth-child(even) td { background: #f9fbf6; }
+    table tr { transition: background .2s; }
+    table tr:hover td { background: var(--green-pale); }
+
+    code { background: #eef2e6; padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: .9em; }
+
+    .codewrap { position: relative; }
+    .codewrap pre {
+      background: #2f3b26; color: #eaf3e0; padding: 15px 16px; border-radius: 6px;
+      overflow-x: auto; font-size: .85em; line-height: 1.5; margin: 12px 0;
+    }
+    .codewrap pre code { background: none; color: inherit; padding: 0; }
+    .copybtn {
+      position: absolute; top: 20px; right: 10px;
+      background: rgba(255,255,255,.12); color: #eaf3e0;
+      border: 1px solid rgba(255,255,255,.25); border-radius: 4px;
+      padding: 3px 10px; font-size: .75em; font-family: 'Mulish'; font-weight: 700;
+      cursor: pointer; opacity: 0; transition: opacity .25s, background .2s;
+    }
+    .codewrap:hover .copybtn { opacity: 1; }
+    .copybtn:hover { background: rgba(255,255,255,.25); }
+    .copybtn.done { background: var(--green); border-color: var(--green); }
+
+    .note { background: #fff8e1; border-left: 4px solid #e6b800; padding: 12px 16px; margin: 16px 0; border-radius: 0 6px 6px 0; }
+    .tip  { background: var(--green-pale); border-left: 4px solid var(--green); padding: 12px 16px; margin: 16px 0; border-radius: 0 6px 6px 0; }
+
+    .quote {
+      background: #fff; border: 1px solid var(--line); border-radius: 6px;
+      padding: 16px 20px; margin: 16px 0; font-size: .95em; color: #444;
+    }
+    .quote em { color: var(--muted); }
+
+    /* ---------- ACCORDION ---------- */
+    .acc {
+      background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--green);
+      margin: 12px 0; border-radius: 0 6px 6px 0; overflow: hidden;
+      transition: box-shadow .28s var(--ease);
+    }
+    .acc:hover { box-shadow: 0 8px 20px rgba(37,100,40,.09); }
+    .acc-head { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+    .acc-head h3 { margin: 0; font-size: 1.05em; flex: 1; }
+    .acc-head .chev { color: var(--green); font-size: 1.1em; transition: transform .35s var(--ease); }
+    .acc.open .acc-head .chev { transform: rotate(180deg); }
+    .acc-body { max-height: 0; overflow: hidden; transition: max-height .45s var(--ease); }
+    .acc.open .acc-body { max-height: 3000px; }
+    .acc-inner { padding: 0 20px 16px 20px; }
+    .meta { font-size: .85em; color: var(--muted); }
+
+    /* ---------- TABS ---------- */
+    .tabs { margin: 22px 0; }
+    .tabbar { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 2px solid var(--line); margin-bottom: 4px; }
+    .tabbtn {
+      background: none; border: none; padding: 10px 18px; cursor: pointer;
+      font-family: 'Mulish'; font-size: .95em; font-weight: 700; color: var(--muted);
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+      transition: color .2s, border-color .2s;
+    }
+    .tabbtn:hover { color: var(--green-dark); }
+    .tabbtn.active { color: var(--green-dark); border-bottom-color: var(--green); }
+    .tabpane { display: none; animation: paneIn .4s var(--ease); }
+    .tabpane.active { display: block; }
+    @keyframes paneIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: none;} }
+
+    /* ---------- TIMELINE ---------- */
+    .timeline { position: relative; margin: 24px 0 24px 10px; padding-left: 26px; }
+    .timeline::before { content:''; position: absolute; left:0; top:0; bottom:0; width:3px; background: var(--line); }
+    .timeline::after { content:''; position: absolute; left:0; top:0; width:3px; height: var(--tlfill,0%); background: var(--green); transition: height .3s linear; }
+    .tl-item { position: relative; margin-bottom: 22px; }
+    .tl-item::before {
+      content:''; position: absolute; left:-32px; top:8px;
+      width:11px; height:11px; border-radius:50%;
+      background:#fff; border:3px solid var(--line);
+      transition: border-color .35s, transform .35s var(--ease);
+    }
+    .tl-item.in::before { border-color: var(--green); transform: scale(1.2); }
+    .tl-item h4 { margin: 0 0 3px 0; font-size: 1em; }
+    .tl-item p { margin: 0; font-size: .92em; color: #555; }
+
+    .cta-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin: 40px 0 10px 0; }
+    .cta {
+      background: var(--green); color:#fff; padding: 12px 24px;
+      text-decoration:none; border-radius:5px; font-weight:700;
+      transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s;
+    }
+    .cta:hover { background: var(--green-dark); transform: translateY(-3px); box-shadow: 0 8px 18px rgba(37,100,40,.28); }
+    .cta.alt { background:#fff; color: var(--green-dark); border:2px solid var(--green); }
+    .cta.alt:hover { background: var(--green-pale); }
+
+    #totop {
+      position: fixed; right: 22px; bottom: 22px;
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--green); color:#fff; border:none; cursor:pointer;
+      font-size:1.1em; line-height:1; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+      opacity:0; pointer-events:none;
+      transition: opacity .3s, transform .3s var(--ease), background .2s; z-index: 900;
+    }
+    #totop.show { opacity:1; pointer-events:auto; }
+    #totop:hover { background: var(--green-dark); transform: translateY(-4px); }
+
+    footer { text-align:center; padding: 28px; font-size:.85em; color:#777; }
+
+    @media (max-width: 760px) {
+      .main-container { width: 93%; }
+      .header-center { position: static; transform:none; }
+      .hero h1 { font-size: 1.85em; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration:.001ms !important; animation-iteration-count:1 !important;
+        transition-duration:.001ms !important;
+      }
+      .reveal { opacity:1; transform:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress"></div>
+
+  <header>
+    <div class="header-left">
+      <img id="SILlogo" src="{% static '//img/Logo_SIL_white_en.png' %}" alt="SIL Logo" />
+    </div>
+    <div class="header-center">
+      <img id="Sketchmapialogo" src="{% static '//img/SKETCHMAPIA.png' %}" alt="SketchMapia Logo" />
+    </div>
+  </header>
+
+  <div class="hero" id="top">
+    <h1 class="fade-seq">Sketch Map Analyser</h1>
+    <p class="tagline fade-seq">A Researcher's Guide</p>
+    <p class="subtitle fade-seq">
+      How to measure what people remember about a place — and what the numbers mean.
+    </p>
+  </div>
+
+  <nav id="secnav">
+    <div class="inner">
+      <a href="#start">Start here</a>
+      <a href="#concepts">Key concepts</a>
+      <a href="#design">Designing a study</a>
+      <a href="#running">Running an analysis</a>
+      <a href="#results">Reading your results</a>
+      <a href="#example">Worked example</a>
+      <a href="#stats">Into your stats software</a>
+      <a href="#reporting">Reporting in a paper</a>
+      <a href="#limits">Limitations</a>
+      <a href="#research">Research background</a>
+      <a href="#technical">Technical reference</a>
+    </div>
+  </nav>
+
+  <div class="main-container">
+
+    <div class="breadcrumb"><a href="{% url 'home' %}">← Back to home</a></div>
+
+    <!-- ============ START HERE ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="start">Start here</h2>
+
+      <p class="lead reveal">
+        When you ask someone to draw a map of a place they know, what they produce is not a bad map — it is
+        evidence. A sketch map externalizes a cognitive map: what the person encoded, what they kept, and how they
+        organized it. The problem has always been turning that evidence into numbers you can analyse.
+      </p>
+
+      <p class="reveal d1">
+        Traditionally this meant hand-coding: two raters, a scoring sheet, an inter-rater reliability check, and weeks
+        of work per study. The Sketch Map Analyser replaces that with a set of automatic, reproducible measurements.
+        You give it a <strong>reference map</strong> of the real environment and a participant's <strong>sketch map</strong>,
+        tell it which drawn features correspond to which real ones, and it returns a row of numbers per participant.
+      </p>
+
+      <div class="tip reveal">
+        <strong>What you do not need:</strong> any programming, any command line, any GIS experience. You work in a
+        web page: load maps, click features to match them up, press <em>Analyse</em>, download a spreadsheet.
+      </div>
+
+      <h3>The three questions</h3>
+      <p class="reveal">Everything the tool measures is an answer to one of three questions about a participant's drawing.</p>
+
+      <div class="steps">
+        <div class="step reveal">
+          <span class="num">1</span>
+          <h4>What did they remember?</h4>
+          <p>Of everything that exists in the real environment, how much appears in the drawing at all? This is a
+             recall measure — it says nothing about whether things were placed correctly.</p>
+          <span class="q">Completeness</span>
+        </div>
+        <div class="step reveal d1">
+          <span class="num">2</span>
+          <h4>How much did they simplify?</h4>
+          <p>People collapse a row of shops into one block, or straighten a curved street. The tool identifies these
+             simplifications so they are not mistaken for memory errors.</p>
+          <span class="q">Generalization</span>
+        </div>
+        <div class="step reveal d2">
+          <span class="num">3</span>
+          <h4>Did they get the layout right?</h4>
+          <p>Given what they drew, is it arranged correctly? Measured two ways: whether relationships hold
+             (is the park still north of the station?) and whether distances and angles are accurate.</p>
+          <span class="q">Accuracy measures</span>
+        </div>
+      </div>
+
+      <p class="reveal">
+        Keeping these separate is the central design decision. A participant who draws only three landmarks but places
+        them perfectly is <em>not</em> the same as one who draws twenty landmarks in a jumble — yet a single "accuracy"
+        score would rate them similarly. Here, the first has low completeness and high configural accuracy; the second
+        the reverse. Both patterns are theoretically meaningful, and you can analyse them independently.
+      </p>
+    </section>
+
+    <!-- ============ CONCEPTS ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="concepts">Key concepts and vocabulary</h2>
+
+      <p class="reveal">
+        A few terms recur throughout the software and this page. They come from geoinformatics rather than psychology,
+        so they are worth defining once.
+      </p>
+
+      <div class="glossary">
+        <div class="gl reveal"><strong>Base map (or reference map)</strong>
+          <p>The ground truth — an accurate map of the real environment your participants are drawing from memory.
+             Usually derived from OpenStreetMap.</p></div>
+        <div class="gl reveal d1"><strong>Sketch map</strong>
+          <p>The participant's drawing, traced into the software so that each drawn object becomes a separate, countable
+             feature.</p></div>
+        <div class="gl reveal d2"><strong>Feature</strong>
+          <p>A single object on either map: one building, one street segment, one park. The unit everything is counted in.</p></div>
+        <div class="gl reveal d3"><strong>Landmark</strong>
+          <p>A point or area feature — a building, monument, square. Distinguished from streets, which are line features
+             and are counted separately.</p></div>
+        <div class="gl reveal"><strong>Alignment</strong>
+          <p>Your judgement about which sketch feature corresponds to which real feature. You make these matches by hand;
+             every measurement depends on them.</p></div>
+        <div class="gl reveal d1"><strong>Generalization</strong>
+          <p>A simplification the participant made — merging several buildings into one, collapsing a roundabout to a
+             crossing, drawing an area as a line.</p></div>
+        <div class="gl reveal d2"><strong>Generalized base map</strong>
+          <p>The reference map rebuilt at the participant's level of detail. This — not the original — is what accuracy
+             measures compare against.</p></div>
+        <div class="gl reveal d3"><strong>Junction</strong>
+          <p>A point where two or more streets meet. Junctions can be analysed instead of buildings, which is useful for
+             route-based or street-dominated sketches.</p></div>
+      </div>
+
+      <h3>Why the "generalized" base map matters</h3>
+      <p class="reveal">
+        This is the single most important idea in the tool, and the one most easily missed.
+      </p>
+      <div class="quote reveal">
+        Suppose the real environment contains three adjacent shops. Your participant draws one rectangle and labels it
+        "the shops." Scored naively, that is two omissions and one misplaced building.
+        <br><br>
+        But that is not a memory failure — it is <em>categorical abstraction</em>, and arguably a sign of well-organized
+        spatial knowledge. So before any accuracy measure runs, the software merges those three shops on the reference
+        map into one, matching what the participant did. The comparison is then like-for-like.
+      </div>
+      <p class="reveal">
+        The consequence for interpretation: accuracy scores tell you how well someone laid out
+        <em>the world as they conceived it</em>, not how well they reproduced a cartographer's map. If you want the
+        latter, completeness is where the omissions show up.
+      </p>
+    </section>
+
+    <!-- ============ DESIGN ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="design">Designing a study</h2>
+
+      <h3>What you need before you start</h3>
+      <table class="reveal">
+        <tr><th>You need</th><th>Notes</th></tr>
+        <tr><td>A defined study area</td><td>Bounded and consistent across participants. Everyone should be drawing the same environment.</td></tr>
+        <tr><td>A reference map of that area</td><td>Loaded into the software from OpenStreetMap data.</td></tr>
+        <tr><td>Participants' sketch maps</td><td>Drawn on paper and traced in, or drawn directly in the editor.</td></tr>
+        <tr><td>Time for alignment</td><td>The manual step. Budget realistically — see below.</td></tr>
+      </table>
+
+      <h3>Practical guidance</h3>
+
+      <p class="reveal"><strong>Standardize the drawing task.</strong> Sketch maps are highly sensitive to instructions.
+         "Draw the campus" and "draw your route from the station to the library" elicit different representations
+         (survey versus route knowledge). Whatever you choose, keep it identical across participants and report it.</p>
+
+      <p class="reveal"><strong>Keep paper size and orientation constant.</strong> The tool normalizes for overall scale
+         and rotation, but a participant who runs out of paper compresses one side of their map — which becomes a real
+         distortion in the data rather than an artefact you can remove.</p>
+
+      <p class="reveal"><strong>Expect alignment to dominate your time.</strong> Analysis itself takes seconds; deciding
+         that "this blob is the library" takes judgement. For ambiguous drawings, consider having two researchers align
+         independently and reporting agreement — the automated measures are perfectly reliable, but the alignment they
+         rest on is a human coding decision like any other.</p>
+
+      <p class="reveal"><strong>Decide in advance whether you are analysing buildings or junctions.</strong> Landmark-based
+         measures need enough matched buildings to be stable; junction-based measures suit street-heavy or route sketches.
+         You can run both, but choose your primary measure before looking at the data.</p>
+
+      <div class="note reveal">
+        <strong>Sample size within a map.</strong> The configural measures compare every pair of features. With only two
+        or three matched landmarks there are very few pairs, and the scores become unstable — a single misplaced building
+        can swing them dramatically. Treat results from sparse sketches with caution, and consider reporting the number
+        of matched features alongside each score.
+      </div>
+    </section>
+
+    <!-- ============ RUNNING ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="running">Running an analysis</h2>
+
+      <ol class="reveal">
+        <li><strong>Load your project</strong> — the reference map and one or more sketch maps.</li>
+        <li><strong>Tidy the geometry</strong> <em>(optional)</em>. Hand-drawn streets often don't quite meet, or one
+            street gets drawn as several strokes. The software can propose fixes — joining near-miss endpoints, merging
+            broken segments — and you approve each one. Nothing is changed without your say-so. Worth doing if you plan
+            to use junction-based measures, since those depend on streets actually connecting.</li>
+        <li><strong>Align the features</strong> — click a sketch feature, then the real feature it corresponds to.</li>
+        <li><strong>Press Analyse.</strong> Choose which measures to run:
+          <ul>
+            <li><strong>Completeness</strong> — always included</li>
+            <li><strong>Accuracy</strong> — the relational measures</li>
+            <li><strong>Buildings GMDA</strong> — configural accuracy from landmarks</li>
+            <li><strong>Junctions GMDA</strong> — configural accuracy from street junctions</li>
+          </ul>
+        </li>
+        <li><strong>Read the results table</strong> — one row per sketch map, grouped by measure family.</li>
+        <li><strong>Download Results</strong> — a zip of spreadsheets ready for your statistics software.</li>
+      </ol>
+
+      <div class="tip reveal">
+        Running more measures costs almost nothing in time, and you cannot go back and add a measure to an old export
+        without re-running. Unless you have a preregistered reason not to, tick everything — then analyse only what you
+        planned to.
+      </div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="results">Reading your results</h2>
+
+      <p class="reveal">
+        Each measure below lists its range, which direction is "better," what it is actually sensitive to, and what to
+        watch out for. Use the tabs to move between measure families.
+      </p>
+
+      <div class="tabs reveal">
+        <div class="tabbar">
+          <button class="tabbtn active" data-tab="t-comp">Completeness</button>
+          <button class="tabbtn" data-tab="t-rel">Relational accuracy</button>
+          <button class="tabbtn" data-tab="t-conf">Configural accuracy</button>
+          <button class="tabbtn" data-tab="t-bdr">Overall distortion</button>
+        </div>
+
+        <!-- COMPLETENESS -->
+        <div class="tabpane active" id="t-comp">
+          <p>How much of the environment made it into the drawing. A pure recall measure.</p>
+
+          <div class="metric">
+            <h4>Landmark completeness</h4>
+            <span class="range">0–100% · higher = more recalled</span>
+            <p class="plain">The percentage of reference landmarks that appear in the sketch.</p>
+            <div class="interp"><strong>Interpretation.</strong> A memory-quantity measure, closely analogous to
+              free-recall scores. Sensitive to encoding, exposure duration and familiarity.</div>
+            <div class="watch"><strong>Watch out:</strong> counted against the <em>generalized</em> reference map, so
+              merging several buildings into one does not count as omissions. This is deliberate, but it means
+              completeness is slightly more forgiving than a raw feature count would be.</div>
+          </div>
+
+          <div class="metric">
+            <h4>Street completeness</h4>
+            <span class="range">0–100% · higher = more recalled</span>
+            <p class="plain">The same calculation for street segments rather than landmarks.</p>
+            <div class="interp"><strong>Interpretation.</strong> Often dissociates from landmark completeness. Route
+              learners commonly recall the streets they travelled while omitting landmarks off-route; survey learners
+              often show the opposite. Reporting both separately is usually more informative than the average.</div>
+          </div>
+
+          <div class="metric">
+            <h4>Overall completeness</h4>
+            <span class="range">0–100% · higher = more recalled</span>
+            <p class="plain">The mean of the two measures above.</p>
+            <div class="watch"><strong>Watch out:</strong> an unweighted average. If your environment has 12 landmarks and
+              90 street segments, both still contribute equally. Check the two components before relying on the composite.</div>
+          </div>
+        </div>
+
+        <!-- RELATIONAL -->
+        <div class="tabpane" id="t-rel">
+          <p>
+            Whether the <em>relationships</em> between features are preserved, independent of metric precision. A sketch
+            can be geometrically hopeless yet relationally perfect: the church still inside the square, the shop still on
+            the left of the road, the streets still crossing in the same order.
+          </p>
+          <p>
+            The software extracts every such relationship from both maps and compares them one by one, across six
+            families: containment and overlap, street–area topology, left/right of a road, relative direction between
+            streets, street connectivity, and order along a route. Each family gets its own score; two summary measures
+            aggregate across all of them.
+          </p>
+
+          <div class="metric">
+            <h4>Precision</h4>
+            <span class="range">0–1 · higher = better</span>
+            <p class="plain">Of all the relationships the participant expressed in their drawing, the proportion that
+               match reality.</p>
+            <div class="interp"><strong>Interpretation.</strong> "When they committed to a spatial relationship, how often
+               were they right?" Insensitive to what they left out — a sparse but correct map scores high.</div>
+          </div>
+
+          <div class="metric">
+            <h4>Recall</h4>
+            <span class="range">0–1 · higher = better</span>
+            <p class="plain">Of all the relationships present in the real environment, the proportion the participant
+               captured correctly.</p>
+            <div class="interp"><strong>Interpretation.</strong> Penalized by omission. Typically much lower than
+               precision, because the reference environment contains far more relationships than anyone draws. Do not be
+               alarmed by low values — compare across conditions rather than against an absolute standard.</div>
+            <div class="watch"><strong>Watch out:</strong> these are the standard information-retrieval definitions, not
+               "recall" in the memory sense. Consider renaming them in your write-up to avoid confusing readers.</div>
+          </div>
+
+          <div class="metric">
+            <h4>Per-family correctness</h4>
+            <span class="range">0–100% · higher = better</span>
+            <p class="plain">The same match rate calculated separately for each relationship family.</p>
+            <div class="interp"><strong>Interpretation.</strong> Useful for theoretically targeted predictions — for
+               example, that route learners preserve sequential order along a path better than global direction. Look at
+               the individual families rather than only the aggregate.</div>
+            <div class="watch"><strong>Watch out:</strong> families with very few relationships in a given map produce
+               noisy percentages. The counts are exported alongside, so check them.</div>
+          </div>
+        </div>
+
+        <!-- CONFIGURAL -->
+        <div class="tabpane" id="t-conf">
+          <p>
+            The metric measures, from the <strong>Gardony Map Drawing Analyzer</strong> — an established, published method
+            for quantifying sketch map accuracy. It works by taking every pair of features and asking how the drawn
+            relationship between them differs from the true one, then aggregating those pairwise errors.
+          </p>
+          <p class="meta">
+            Available in two variants: <strong>Buildings</strong> (landmarks) and <strong>Junctions</strong> (street
+            intersections). Both produce the same six scores.
+          </p>
+
+          <div class="metric">
+            <h4>CanOrg — canonical organization</h4>
+            <span class="range">0–1 · higher = better</span>
+            <p class="plain">Whether features are in the correct broad direction from each other (north/south, east/west),
+               calculated across all pairs <em>in the real environment</em>.</p>
+            <div class="interp"><strong>Interpretation.</strong> Because the denominator includes pairs the participant
+               never drew, omissions lower this score. It is a combined measure of recall <em>and</em> coarse layout —
+               the closest thing here to a single "overall quality" number.</div>
+            <div class="watch"><strong>Watch out:</strong> values are often strikingly low (0.1 is common) simply because
+               participants draw a fraction of the environment. This is expected. It is a relative measure — compare
+               conditions, not to 1.0.</div>
+          </div>
+
+          <div class="metric">
+            <h4>CanAcc — canonical accuracy</h4>
+            <span class="range">0–1 · higher = better</span>
+            <p class="plain">The same directional check, but calculated only over the features the participant actually
+               drew.</p>
+            <div class="interp"><strong>Interpretation.</strong> Layout quality with recall removed. Read alongside
+               CanOrg: a large gap between them means the participant drew little but organized it well.
+               Completeness already measures the recall side, so CanAcc is usually the cleaner dependent variable.</div>
+          </div>
+
+          <div class="metric">
+            <h4>DistAcc — distance accuracy</h4>
+            <span class="range">≤1 · higher = better</span>
+            <p class="plain">How well relative distances between features are preserved, after equalizing for the
+               overall size difference between drawing and reality.</p>
+            <div class="interp"><strong>Interpretation.</strong> Because it is scale-normalized, drawing a small map does
+               not penalize you — only getting the <em>proportions</em> wrong does. Sensitive to local distortions, such
+               as expanding a familiar neighbourhood relative to its surroundings.</div>
+          </div>
+
+          <div class="metric">
+            <h4>ScaBias — scaling bias</h4>
+            <span class="range">signed · 0 = unbiased</span>
+            <p class="plain">The same distance comparison, but keeping the sign.</p>
+            <div class="interp"><strong>Interpretation.</strong> Positive means the participant systematically expanded
+               distances; negative means they compressed them. Where DistAcc measures error magnitude, this measures
+               <em>direction</em> — the signature of systematic distortion rather than noise.</div>
+            <div class="watch"><strong>Watch out:</strong> near-zero can mean either no bias or expansions and compressions
+               cancelling out. Always report it with DistAcc.</div>
+          </div>
+
+          <div class="metric">
+            <h4>AngAcc — angular accuracy</h4>
+            <span class="range">0–1 · higher = better</span>
+            <p class="plain">How well the angles between pairs of features are preserved.</p>
+            <div class="interp"><strong>Interpretation.</strong> A finer-grained companion to CanAcc. Canonical direction
+               only asks "roughly north?"; this asks "at the right bearing?" A participant can score well on one and
+               poorly on the other, which is itself informative.</div>
+          </div>
+
+          <div class="metric">
+            <h4>RotBias — rotational bias</h4>
+            <span class="range">−180° to +180° · 0 = aligned</span>
+            <p class="plain">Whether the whole drawing is systematically rotated relative to reality. Positive is
+               clockwise, negative counterclockwise.</p>
+            <div class="interp"><strong>Interpretation.</strong> One of the most theoretically loaded measures. Systematic
+               rotation often reflects an alignment to a reference frame other than north — a dominant street grid, a
+               habitual approach direction, or the orientation the environment was learned from.</div>
+            <div class="watch"><strong>Watch out:</strong> it is circular data. Do not average rotation across participants
+               with an ordinary mean — +170° and −170° average to 0°, implying no bias when both were rotated nearly
+               half a turn. Use circular statistics.</div>
+          </div>
+        </div>
+
+        <!-- BDR -->
+        <div class="tabpane" id="t-bdr">
+          <p>
+            <strong>Bi-dimensional regression</strong> is a long-established method for comparing two spatial
+            configurations. Conceptually it is ordinary regression generalized to two dimensions: it finds the single
+            best transformation — one uniform stretch, one rotation, one shift — that maps the real configuration onto the
+            drawn one, then asks how much of the drawing that transformation explains.
+          </p>
+
+          <div class="metric">
+            <h4>r — bidimensional correlation</h4>
+            <span class="range">0–1 · higher = better</span>
+            <p class="plain">How well the configurations correspond once the best transformation is applied.</p>
+            <div class="interp"><strong>Interpretation.</strong> Read like a correlation coefficient. High values mean the
+               drawing is essentially the real layout scaled, turned and shifted; lower values mean the internal
+               arrangement itself differs.</div>
+          </div>
+
+          <div class="metric">
+            <h4>DI — distortion index</h4>
+            <span class="range">0 upwards · lower = better</span>
+            <p class="plain">The residual distortion, computed directly from <em>r</em>.</p>
+            <div class="interp"><strong>Interpretation.</strong> Zero is a perfect match. Reports the same information as
+               <em>r</em> on a scale where bigger means worse — report one or the other, not both as independent findings.</div>
+          </div>
+
+          <div class="metric">
+            <h4>phi — scale factor</h4>
+            <span class="range">around 1 = same scale</span>
+            <p class="plain">How much larger or smaller the drawing is than reality, overall.</p>
+            <div class="interp"><strong>Interpretation.</strong> Usually a nuisance parameter driven by paper size, but
+               meaningful if drawing scale is manipulated or free.</div>
+          </div>
+
+          <div class="metric">
+            <h4>theta — rotation</h4>
+            <span class="range">degrees</span>
+            <p class="plain">The overall rotation of the drawing relative to the reference.</p>
+            <div class="interp"><strong>Interpretation.</strong> Conceptually parallel to RotBias, estimated by a
+               different route. The two can be reported as converging evidence — and again, they are circular data.</div>
+          </div>
+
+          <div class="metric">
+            <h4>alpha1, alpha2 — translation</h4>
+            <span class="range">horizontal and vertical shift</span>
+            <p class="plain">How far the fitted configuration is displaced.</p>
+            <div class="interp"><strong>Interpretation.</strong> Almost always a nuisance parameter — it mostly reflects
+               where on the page someone began drawing. Rarely reported.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note reveal">
+        <strong>A general caution on direction.</strong> Most measures here are "higher is better," but three are not:
+        <strong>DI</strong> (lower is better), and <strong>ScaBias</strong> and <strong>RotBias</strong>, which are
+        signed biases where zero — not the maximum — is unbiased. Check the direction of every measure before
+        interpreting a correlation table.
+      </div>
+    </section>
+
+    <!-- ============ EXAMPLE ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="example">A worked example</h2>
+
+      <p class="reveal">Suppose one participant's row comes back like this:</p>
+
+      <table class="reveal">
+        <tr><th>Measure</th><th>Value</th></tr>
+        <tr><td>Landmark completeness</td><td>35.7%</td></tr>
+        <tr><td>Street completeness</td><td>40.9%</td></tr>
+        <tr><td>CanOrg</td><td>0.10</td></tr>
+        <tr><td>CanAcc</td><td>0.89</td></tr>
+        <tr><td>DistAcc</td><td>0.94</td></tr>
+        <tr><td>ScaBias</td><td>−0.0001</td></tr>
+        <tr><td>AngAcc</td><td>0.79</td></tr>
+        <tr><td>RotBias</td><td>−30.2°</td></tr>
+      </table>
+
+      <p class="reveal"><strong>How to read it.</strong></p>
+
+      <p class="reveal">
+        They drew roughly a third of the environment. That is unremarkable — most people do.
+      </p>
+      <p class="reveal">
+        The gap between CanOrg (0.10) and CanAcc (0.89) is the story. CanOrg is low almost entirely because two-thirds of
+        the environment is missing from the denominator, not because the layout is poor. CanAcc, restricted to what they
+        actually drew, is high: what they remembered, they organized correctly. This is a selective but well-structured
+        representation, and it would be a serious misreading to describe this participant as spatially inaccurate on the
+        strength of CanOrg alone.
+      </p>
+      <p class="reveal">
+        Distances are well preserved (0.94), and scaling bias is essentially zero — no systematic expansion or
+        compression.
+      </p>
+      <p class="reveal">
+        The interesting result is RotBias at −30°. Angular accuracy is noticeably lower than distance accuracy (0.79
+        against 0.94), and this rotation is why: the whole configuration is turned roughly 30° counterclockwise. That is
+        not random error. It suggests the participant encoded the environment relative to some frame other than north —
+        a main street's orientation, or the direction they habitually approach from. Worth checking whether it replicates
+        across participants; a consistent rotation across a sample is a finding, not noise.
+      </p>
+
+      <div class="tip reveal">
+        The general habit: <strong>never read a single score in isolation.</strong> Completeness contextualizes CanOrg;
+        RotBias explains gaps between AngAcc and DistAcc; ScaBias qualifies DistAcc. The measures were designed to be
+        read as a profile.
+      </div>
+    </section>
+
+    <!-- ============ STATS ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="stats">Getting your data into statistics software</h2>
+
+      <p class="reveal">
+        <strong>Download Results</strong> gives you a zip of CSV files. CSV opens directly in Excel, SPSS, R, JASP and
+        jamovi.
+      </p>
+
+      <table class="reveal">
+        <tr><th>File</th><th>What it contains</th><th>Use it for</th></tr>
+        <tr><td><code>ResultSummary.csv</code></td><td>One row per sketch map, every measure as a column</td><td>Your main analysis file</td></tr>
+        <tr><td><code>CompletenessDetailedOutput.csv</code></td><td>The underlying feature counts</td><td>Checking what drove a completeness score</td></tr>
+        <tr><td><code>GMDADetailedOutput.csv</code></td><td>Configural measures plus how many features were matched</td><td>Screening for sparse, unstable cases</td></tr>
+        <tr><td><code>BDRDetailedOutput.csv</code></td><td>Regression parameters per map</td><td>Distortion analyses</td></tr>
+        <tr><td><code>QADetailedOutput.csv</code></td><td>Relationship counts per family</td><td>Family-specific hypotheses</td></tr>
+        <tr><td><code>GeneralizationDetailedOutput.csv</code></td><td>Which features each participant merged or simplified</td><td>Studying abstraction itself</td></tr>
+        <tr><td><code>QualitativeRelations/</code></td><td>The full relationship list for each map</td><td>Custom or exploratory relational coding</td></tr>
+      </table>
+
+      <p class="reveal">
+        <code>ResultSummary.csv</code> is already in the shape most analyses want: participants in rows, measures in
+        columns. Add your condition and demographic variables as extra columns and you are ready to analyse.
+      </p>
+
+      <div class="note reveal">
+        <strong>Before you analyse.</strong> Sketch map measures are frequently non-normal — bounded scores pile up near
+        their limits, and completeness is often right-skewed. Inspect distributions before defaulting to parametric
+        tests, and remember that rotation measures require circular statistics.
+      </div>
+    </section>
+
+    <!-- ============ LIMITATIONS ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="limits">Limitations and things to be careful about</h2>
+
+      <p class="reveal">
+        The measures are computed reliably; that does not make every interpretation of them safe.
+      </p>
+
+      <div class="glossary">
+        <div class="gl reveal"><strong>Alignment is a human judgement</strong>
+          <p>Everything downstream rests on your decisions about which drawn feature is which. Reliable in clear cases,
+             genuinely ambiguous in others. Treat it as coding, with the same safeguards.</p></div>
+        <div class="gl reveal d1"><strong>Sparse sketches give unstable scores</strong>
+          <p>Configural measures use feature pairs. Few matched features means few pairs, and single errors dominate.
+             Consider a minimum-features criterion, set in advance.</p></div>
+        <div class="gl reveal d2"><strong>Drawing ability is a confound</strong>
+          <p>The tool measures the drawing, not the mental representation directly. Motor skill, confidence and
+             willingness to commit to detail all contribute.</p></div>
+        <div class="gl reveal d3"><strong>Scores are relative, not absolute</strong>
+          <p>There is no established norm for a "good" CanOrg. These measures are for comparing conditions, groups or
+             time points — not for classifying an individual.</p></div>
+        <div class="gl reveal"><strong>Rotation and bias measures are circular or signed</strong>
+          <p>Ordinary means and standard deviations mislead on RotBias and theta. Signed biases can cancel across
+             participants, hiding real distortion.</p></div>
+        <div class="gl reveal d1"><strong>Composite measures can obscure</strong>
+          <p>Overall completeness averages landmarks and streets equally regardless of how many of each exist. Check
+             components before interpreting composites.</p></div>
+        <div class="gl reveal d2"><strong>Generalization handling is a choice</strong>
+          <p>Applying participants' simplifications to the reference map is defensible and deliberate — but it does mean
+             your accuracy scores are not directly comparable to methods that skip this step.</p></div>
+        <div class="gl reveal d3"><strong>The environment shapes the numbers</strong>
+          <p>A dense city centre and a sparse suburb yield different baseline values for the same participant ability.
+             Do not pool across environments without care.</p></div>
+      </div>
+    </section>
+
+    <!-- ============ RESEARCH ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="research">Research background</h2>
+
+      <p class="reveal">
+        The tool was developed at the
+        <a href="https://www.uni-muenster.de/Geoinformatics/en/sil/" target="_blank" rel="noopener noreferrer">Spatial Intelligence Lab</a>,
+        Institute for Geoinformatics, University of Münster, building on a line of work concerned with making sketch map
+        analysis systematic rather than manual.
+      </p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <h4>Qualitative foundations</h4>
+          <p>Establishing that sketch and metric maps can be aligned through qualitative spatial relations rather than
+             coordinates — the basis of the relational measures (Schwering et al., 2014).</p>
+        </div>
+        <div class="tl-item">
+          <h4>Classifying sketch maps</h4>
+          <p>A feature-based scheme for distinguishing types of sketch map, informing how drawings are characterized
+             before analysis (Krukar et al., 2018).</p>
+        </div>
+        <div class="tl-item">
+          <h4>Understanding generalization</h4>
+          <p>A systematic classification of how people simplify space when drawing (Manivannan et al., 2022), followed by
+             a method for detecting those simplifications automatically (Manivannan et al., 2024).</p>
+        </div>
+        <div class="tl-item">
+          <h4>Quantitative accuracy measures</h4>
+          <p>Integration of the Gardony Map Drawing Analyzer and bi-dimensional regression, giving metric configural
+             accuracy alongside the relational measures.</p>
+        </div>
+      </div>
+
+      <h3>Key references</h3>
+      <ul class="reveal">
+        <li>Gardony, A. L., Taylor, H. A., &amp; Brunyé, T. T. (2016). <em>Gardony Map Drawing Analyzer: Software for
+          quantitative analysis of sketch maps.</em> Behavior Research Methods, 48, 151–177.
+          <a href="https://link.springer.com/article/10.3758/s13428-014-0556-x" target="_blank" rel="noopener noreferrer">doi:10.3758/s13428-014-0556-x</a></li>
+        <li>Manivannan, C., Krukar, J., &amp; Schwering, A. (2024). <em>An algorithmic approach to detect generalization in
+          sketch maps from sketch map alignment.</em> PLOS ONE.
+          <a href="https://doi.org/10.1371/journal.pone.0304696" target="_blank" rel="noopener noreferrer">doi:10.1371/journal.pone.0304696</a></li>
+        <li>Manivannan, C., Krukar, J., &amp; Schwering, A. (2022). <em>Spatial generalization in sketch maps: A systematic
+          classification.</em> Journal of Environmental Psychology.
+          <a href="https://doi.org/10.1016/j.jenvp.2022.101851" target="_blank" rel="noopener noreferrer">doi:10.1016/j.jenvp.2022.101851</a></li>
+        <li>Krukar, J., Münzer, S., Lörch, L., Anacta, V. J., Fuest, S., &amp; Schwering, A. (2018).
+          <em>Distinguishing Sketch Map Types: A Flexible Feature-Based Classification.</em> Springer.
+          <a href="https://doi.org/10.1007/978-3-319-96385-3_19" target="_blank" rel="noopener noreferrer">doi:10.1007/978-3-319-96385-3_19</a></li>
+        <li>Schwering, A., Wang, J., Chipofya, M., Jan, S., Li, R., &amp; Broelemann, K. (2014).
+          <em>SketchMapia: Qualitative Representations for the Alignment of Sketch and Metric Maps.</em>
+          Spatial Cognition &amp; Computation.
+          <a href="https://www.tandfonline.com/doi/full/10.1080/13875868.2014.917378" target="_blank" rel="noopener noreferrer">Link</a></li>
+        <li>Bi-dimensional regression as introduced for cognitive-map comparison by Tobler, and formalized by
+          Friedman &amp; Kohler (2003).</li>
+      </ul>
+    </section>
+
+    <!-- ============ TECHNICAL ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="technical">Technical reference</h2>
+
+      <p class="reveal">
+        You do not need any of this to use the tool. It is here for research software engineers, for anyone installing it
+        locally, and for readers who want to verify exactly how a measure is computed.
+      </p>
+
+      <div class="acc reveal">
+        <div class="acc-head"><h3>How the software is put together</h3><span class="chev">⌄</span></div>
+        <div class="acc-body"><div class="acc-inner">
+          <p>Each analysis method runs as an independent service with its own address, coordinated by the main web
+             application. This means a method can be updated or added without disturbing the others.</p>
+          <table>
+            <tr><th>Component</th><th>Address</th><th>Role</th></tr>
+            <tr><td>sketchmap_analyser</td><td><code>:8000</code></td><td>Editor, alignment, results table, export</td></tr>
+            <tr><td>generalizations</td><td><code>:8001</code></td><td>Builds the generalized reference map</td></tr>
+            <tr><td>completeness</td><td><code>:8002</code></td><td>Recall measures</td></tr>
+            <tr><td>qualitativerelations</td><td><code>:8003</code></td><td>Relational measures</td></tr>
+            <tr><td>validation</td><td><code>:8004</code></td><td>Geometry cleanup (researcher-approved)</td></tr>
+            <tr><td>gmda</td><td><code>:8005</code></td><td>Configural accuracy</td></tr>
+            <tr><td>bdr</td><td><code>:8006</code></td><td>Bi-dimensional regression</td></tr>
+          </table>
+          <p class="meta">The main application calls these services from the browser — directly by port locally, and
+             through a reverse proxy in production.</p>
+        </div></div>
+      </div>
+
+      <div class="acc reveal">
+        <div class="acc-head"><h3>Installing and running it yourself</h3><span class="chev">⌄</span></div>
+        <div class="acc-body"><div class="acc-inner">
+          <div class="codewrap">
+            <button class="copybtn">Copy</button>
+<pre><code>git clone https://github.com/ifgi-sil/SketchMapia-Microservices.git
+cd SketchMapia-Microservices
+docker-compose up --build</code></pre>
+          </div>
+          <p>Then open <code>http://localhost:8000/generalizingmaps/</code>.</p>
+          <p>Production deployment uses prebuilt container images published automatically on each release, updated on the
+             server by Watchtower and served behind an Apache reverse proxy that handles HTTPS.</p>
+        </div></div>
+      </div>
+
+      <div class="acc reveal">
+        <div class="acc-head"><h3>Programmatic access (API)</h3><span class="chev">⌄</span></div>
+        <div class="acc-body"><div class="acc-inner">
+          <p>Each service accepts map data as GeoJSON via HTTP POST and returns measures as JSON. Useful for batch
+             processing outside the interface.</p>
+          <table>
+            <tr><th>Endpoint</th><th>Returns</th></tr>
+            <tr><td><code>/generalizations/requestFME/</code></td><td>The generalized reference map</td></tr>
+            <tr><td><code>/completeness/analyzeCompleteness/</code></td><td>Completeness measures</td></tr>
+            <tr><td><code>/accuracy/analyzeQualitative/</code></td><td>Relational measures and full relation lists</td></tr>
+            <tr><td><code>/validation/validate/</code></td><td>Proposed or applied geometry corrections</td></tr>
+            <tr><td><code>/gmda/calculateGMDA/</code></td><td>Configural measures (landmarks)</td></tr>
+            <tr><td><code>/gmda/calculateJunctionGMDA/</code></td><td>Configural measures (junctions)</td></tr>
+            <tr><td><code>/bdr/calculateLandmarksBDR/</code></td><td>Regression parameters (landmarks)</td></tr>
+            <tr><td><code>/bdr/calculateJunctionsBDR/</code></td><td>Regression parameters (junctions)</td></tr>
+          </table>
+          <div class="codewrap">
+            <button class="copybtn">Copy</button>
+<pre><code>{
+  "CanOrg": 0.0962,
+  "CanAcc": 0.8917,
+  "ScaBias": -0.0001,
+  "DistAcc": 0.9358,
+  "RotBias": -30.2334,
+  "AngAcc": 0.7942,
+  "nTL": 14,
+  "nDL": 5
+}</code></pre>
+          </div>
+          <p class="meta"><code>nTL</code> is the number of reference features; <code>nDL</code> the number drawn.</p>
+        </div></div>
+      </div>
+
+      <div class="acc reveal">
+        <div class="acc-head"><h3>Exactly how each measure is computed</h3><span class="chev">⌄</span></div>
+        <div class="acc-body"><div class="acc-inner">
+          <p>Full formulas, derivations and implementation notes live with the source code:</p>
+          <table>
+            <tr><th>Measure family</th><th>Documentation</th></tr>
+            <tr><td>Completeness</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/completeness/README.md" target="_blank" rel="noopener noreferrer">completeness</a></td></tr>
+            <tr><td>Relational accuracy</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/accuracy/README.md" target="_blank" rel="noopener noreferrer">accuracy</a></td></tr>
+            <tr><td>Generalization</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/generalizations/README.md" target="_blank" rel="noopener noreferrer">generalizations</a></td></tr>
+            <tr><td>Configural accuracy</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/gmda/README.md" target="_blank" rel="noopener noreferrer">gmda</a></td></tr>
+            <tr><td>Bi-dimensional regression</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/bdr/README.md" target="_blank" rel="noopener noreferrer">bdr</a></td></tr>
+            <tr><td>Geometry cleanup</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/validation/README.md" target="_blank" rel="noopener noreferrer">validation</a></td></tr>
+            <tr><td>Interface and export</td><td><a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/sketchmap_analyser/README.md" target="_blank" rel="noopener noreferrer">sketchmap_analyser</a></td></tr>
+          </table>
+          <p>Source code: <a href="https://github.com/ifgi-sil/SketchMapia-Microservices" target="_blank" rel="noopener noreferrer">github.com/ifgi-sil/SketchMapia-Microservices</a></p>
+        </div></div>
+      </div>
+
+      <div class="cta-row reveal">
+        <a class="cta" href="{% url 'generalizingmaps:map' %}" target="_blank">Start SKETCHMAPIA</a>
+        <a class="cta alt" href="https://github.com/ifgi-sil/SketchMapia-Microservices" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+        <a class="cta" href="{% url 'home' %}" target="_blank">Go to HOME</a>
+      </div>
+    </section>
+
+  </div>
+
+  <button id="totop" title="Back to top">↑</button>
+
+  <footer>
+    Developed by the <a href="https://www.uni-muenster.de/Geoinformatics/en/sil/" target="_blank" rel="noopener noreferrer">Spatial Intelligence Lab</a> ·
+    Institute for Geoinformatics · University of Münster ·
+    <a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+  </footer>
+
+<script>
+(function () {
+  'use strict';
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var bar = document.getElementById('progress');
+  function updateProgress() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+
+  var toTop = document.getElementById('totop');
+  toTop.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  });
+
+  var revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !reduced) {
+    var ro = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach(function (el) { ro.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add('in'); });
+  }
+
+  var tlItems = document.querySelectorAll('.tl-item');
+  var timeline = document.querySelector('.timeline');
+  if ('IntersectionObserver' in window) {
+    var tlo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); } });
+    }, { threshold: 0.4 });
+    tlItems.forEach(function (el) { tlo.observe(el); });
+  }
+  function updateTimeline() {
+    if (!timeline) return;
+    var r = timeline.getBoundingClientRect();
+    var pct = ((window.innerHeight * 0.7) - r.top) / r.height * 100;
+    timeline.style.setProperty('--tlfill', Math.max(0, Math.min(100, pct)) + '%');
+  }
+
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('#secnav a'));
+  var targets = navLinks.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  var nav = document.getElementById('secnav');
+  function updateSpy() {
+    var best = 0;
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i] && targets[i].getBoundingClientRect().top <= 140) { best = i; }
+    }
+    navLinks.forEach(function (a, i) { a.classList.toggle('active', i === best); });
+    var act = navLinks[best];
+    if (act && nav.scrollWidth > nav.clientWidth) {
+      nav.scrollTo({ left: act.offsetLeft - nav.clientWidth / 2 + act.offsetWidth / 2, behavior: reduced ? 'auto' : 'smooth' });
+    }
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function () {
+      updateProgress(); updateTimeline(); updateSpy();
+      toTop.classList.toggle('show', window.scrollY > 500);
+      ticking = false;
+    });
+  }, { passive: true });
+
+  document.querySelectorAll('.acc-head').forEach(function (head) {
+    head.addEventListener('click', function () { head.parentElement.classList.toggle('open'); });
+  });
+
+  document.querySelectorAll('.tabs').forEach(function (group) {
+    var btns = group.querySelectorAll('.tabbtn');
+    var panes = group.querySelectorAll('.tabpane');
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btns.forEach(function (b) { b.classList.remove('active'); });
+        panes.forEach(function (p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        var pane = group.querySelector('#' + btn.getAttribute('data-tab'));
+        if (pane) { pane.classList.add('active'); }
+      });
+    });
+  });
+
+  document.querySelectorAll('.copybtn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.parentElement.querySelector('code');
+      if (!code) return;
+      var done = function () {
+        btn.textContent = 'Copied'; btn.classList.add('done');
+        setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code.innerText).then(done).catch(function () {});
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = code.innerText;
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (err) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  updateProgress(); updateTimeline(); updateSpy();
+})();
+</script>
+
+</body>
+</html>

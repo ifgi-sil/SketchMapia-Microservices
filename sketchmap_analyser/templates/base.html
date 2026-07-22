@@ -4,200 +4,401 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link href="https://fonts.googleapis.com/css2?family=Give+You+Glory&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Give+You+Glory&family=Mulish:wght@300;400;700&display=swap" rel="stylesheet">
   <title>Sketch Map Analyser</title>
   <style>
+    :root {
+      --green: #7AB629;
+      --green-dark: #256428;
+      --ink: #2c2c2c;
+      --muted: #6f6f6f;
+      --line: #e0e0d8;
+      --paper: #fdfcf8;
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: 'Mulish' ;
-      background-color: #f4f6f8;
-      color: #333;
+      font-family: 'Mulish';
+      background: #f4f6f8;
+      color: var(--ink);
+      line-height: 1.7;
     }
+    .hand { font-family: 'Give You Glory', cursive; }
 
-     header {
-      background-color: #7AB629; /* green top bar */
+    header {
+      background-color: var(--green);
       padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; justify-content: space-between; align-items: center;
       position: relative;
     }
+    .header-left img { height: 40px; }
+    .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+    .header-center img { height: 80px; }
+    #SILlogo { height: 80px; width: auto; }
 
-    .header-left img {
-      height: 40px;
+    /* ---------- HERO ---------- */
+    .hero {
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      padding: 54px 20px 50px 20px;
     }
+    .hero-grid {
+      max-width: 1080px; margin: auto;
+      display: grid; grid-template-columns: 1.05fr 1fr;
+      gap: 46px; align-items: center;
+    }
+    .hero h1 {
+      margin: 0 0 6px 0;
+      font-size: 2.5em; font-weight: 700;
+      color: var(--green-dark); line-height: 1.15;
+    }
+    .hero .tagline {
+      font-size: 1.6em; color: var(--green-dark);
+      margin: 0 0 18px 0; line-height: 1.3;
+    }
+    .hero p.intro { font-size: 1.04em; color: #4a4a4a; margin: 0 0 26px 0; }
 
-    .header-center {
+    .hero-art { position: relative; min-height: 360px; }
+    .hero-art img {
       position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
+      box-shadow: 0 10px 26px rgba(0,0,0,.15);
+      background: #fff;
+    }
+    .hero-art .back {
+      width: 76%; right: 0; top: 0;
+      transform: rotate(2.5deg);
+    }
+    .hero-art .front {
+      width: 62%; left: 0; bottom: 0;
+      transform: rotate(-3deg);
+      border: 1px solid var(--line);
+    }
+    .hero-art .caption {
+      position: absolute; bottom: -14px; right: 10px;
+      font-size: 1.1em; color: var(--muted);
+      transform: rotate(-2deg);
     }
 
-    .header-center img {
-      height: 80px;
+    .btn {
+      display: inline-block;
+      background: var(--green); color: #fff;
+      padding: 12px 28px; text-decoration: none;
+      border-radius: 4px; font-weight: 700;
+      transition: background .2s;
     }
-    .main-container {
-      flex-wrap: wrap;
-      padding: 20px;
-      margin: auto;
-      width:50%;
+    .btn:hover { background: var(--green-dark); }
+    .btn.alt {
+      background: transparent; color: var(--green-dark);
+      border: 2px solid var(--green); padding: 10px 26px;
     }
-  .tiny-bar {
-      width: 100px;
-      height: 4px;
-      background-color: #7AB629;
-      margin-top: 40px;
+    .btn.alt:hover { background: #eef5e2; }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    /* ---------- LAYOUT ---------- */
+    .col { padding: 0 20px; margin: auto; width: 84%; max-width: 760px; }
+    .wide { padding: 0 20px; margin: auto; width: 100%; max-width: 1120px; }
+
+    .tiny-bar {
+      width: 90px; height: 4px; background: var(--green);
+      margin: 58px 0 14px 0;
     }
-    #LinktoSoftware {
-      display: block;
-      background-color: #7AB629;
-      color: white;
-      padding: 10px 20px;
-      text-decoration: none;
-      border-radius: 4px;
-      margin-top: 20px;
-      margin:auto;
-      width: fit-content;
+    h2 { font-size: 1.5em; font-weight: 700; margin: 0 0 12px 0; }
+    h3 { color: var(--green-dark); font-size: 1.06em; margin: 0 0 3px 0; }
+    a { color: var(--green-dark); }
+
+    /* ---------- ROMAN LIST ---------- */
+    .qlist { margin: 24px 0 10px 0; }
+    .q { display: flex; gap: 20px; align-items: baseline; margin-bottom: 22px; }
+    .q .rn { font-size: 1.8em; color: var(--green); min-width: 42px; }
+    .q p { margin: 0; color: #4a4a4a; }
+
+    /* ---------- EXAMPLES ---------- */
+    .examples {
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 4px 0 56px 0;
+      margin-top: 58px;
     }
-      #LinktoSoftware:hover {
-      background-color: #256428;
+    .ex-intro { max-width: 700px; }
+    .ex-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 30px; margin-top: 30px; align-items: start;
+    }
+    .ex-grid figure { margin: 0; }
+    .ex-grid img {
+      width: 100%; display: block;
+      border: 1px solid var(--line);
+      box-shadow: 0 6px 18px rgba(0,0,0,.09);
+      background: #fff;
+    }
+    .ex-grid figcaption {
+      margin-top: 12px; font-size: .92em; color: var(--muted);
+    }
+    .ex-grid figcaption .label {
+      font-family: 'Give You Glory', cursive;
+      font-size: 1.35em; color: var(--green-dark);
+      display: block; margin-bottom: 2px;
     }
 
-    #SILlogo{
-      height: 80px;
-      width: auto;
+    .basemap-full { margin-top: 34px; }
+    .basemap-full img {
+      width: 100%; display: block;
+      border: 1px solid var(--line);
+      box-shadow: 0 6px 18px rgba(0,0,0,.09);
+    }
+    .basemap-full figcaption {
+      margin-top: 12px; font-size: .92em; color: var(--muted);
+      max-width: 700px;
+    }
+    .basemap-full .label {
+      font-family: 'Give You Glory', cursive;
+      font-size: 1.35em; color: var(--green-dark);
+      display: block; margin-bottom: 2px;
     }
 
-    h1{
-      color: #7AB629;
+    /* ---------- VIDEO ---------- */
+    .video-wrap {
+      position: relative; width: 100%; max-width: 640px;
+      margin: 22px 0 0 0; aspect-ratio: 16/9;
+      box-shadow: 0 8px 22px rgba(0,0,0,.13); background: #000;
+    }
+    .video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+    /* ---------- REFERENCES ---------- */
+    .ref { padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .ref:last-child { border-bottom: none; }
+    .ref a.title {
+      color: var(--green-dark); font-weight: 700;
+      text-decoration: none; line-height: 1.45; display: inline-block;
+    }
+    .ref a.title:hover { text-decoration: underline; }
+    .ref .authors { color: #555; font-size: .9em; margin-top: 4px; }
+    .ref .venue { color: var(--muted); font-size: .85em; }
+
+    footer {
+      border-top: 1px solid var(--line);
+      background: #fff;
+      padding: 28px 20px 56px 20px;
+      text-align: center; font-size: .87em; color: #777;
     }
 
-     green-title {
-      display: block;
-    }
-    green-title .title {
-      color: #7AB629;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    green-title .content {
-      color: black;
-      margin-top: 5px;
+    #buildbadge {
+      position: fixed; bottom: 6px; right: 10px; z-index: 9999;
+      font-size: 11px; font-family: monospace; color: #555;
+      background: rgba(255,255,255,.85); padding: 3px 9px;
+      border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.15);
     }
 
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 26px; }
+      .hero-art { min-height: 290px; margin-bottom: 26px; }
+      .ex-grid { grid-template-columns: 1fr; gap: 34px; }
+      .col { width: 92%; }
+      .header-center { position: static; transform: none; }
+      header { flex-direction: column; gap: 8px; }
+      .hero h1 { font-size: 1.9em; }
+      .hero .tagline { font-size: 1.3em; }
+    }
   </style>
 </head>
 <body>
 
   <header>
-       <div class="header-left">
-     <img id = "SILlogo" src="{% static '//img/Logo_SIL_white_en.png' %}" alt="SketchMapia Logo" />
+    <div class="header-left">
+      <img id="SILlogo" src="{% static '//img/Logo_SIL_white_en.png' %}" alt="SIL Logo" />
     </div>
-
     <div class="header-center">
-       <img id = "Sketchmapialogo" src="{% static '//img/SKETCHMAPIA.png' %}" alt="SketchMapia Logo" />
+      <img id="Sketchmapialogo" src="{% static '//img/SKETCHMAPIA.png' %}" alt="SketchMapia Logo" />
     </div>
-
-
   </header>
 
-  <div class="main-container">
-      <h1>Sketch Map Analyser</h1>
-
-       <div class="tiny-bar"></div>
-      <h2>About</h2>
-      <p>
-       Researchers have long sought to systematically study how people perceive and understand space. Sketch maps can be considered as externalization of cognitive mental maps. However, the analysis of sketch maps is still a complicated, manual process. SketchMapia is a comprehensive method to analyse sketch maps. The analysis of sketch maps is utterly complex. SketchMapia assists people to systematically analyse sketch maps in social and natural sciences.
-          <br>
-          <br>
-          The software helps an experimenter to analyse:
-      </p>
-      <p>
-      <ol type="I">
-        <li>which features the participant remember, </li>
-        <li>at which level of generalisation (abstraction) did the participant recall objects, and </li>
-        <li>was the participant able to recall them in the correct spatial configuration. </li>
-      </ol>
-      </p>
-
-      <a id = "LinktoSoftware"  style = "margin:auto" href="generalizingmaps/" target="_blank"> Start SKETCHMAPIA</a>
-       <div class="tiny-bar"></div>
-
-      <h2 >Tutorials</h2>
-      <p>This video gives a short overview of SketchMapia and how to use it.</p>
-      <div style="text-align: center;">
-       <iframe width="420" height="280"
-          src="https://www.youtube.com/embed/7yAf-c5qIrk"
-                title="YouTube video player"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-      </iframe>
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <h1>Sketch Map Analyser</h1>
+        <p class="tagline hand">What people draw from memory, measured.</p>
+        <p class="intro">
+          Sketch maps can be considered externalizations of cognitive mental maps. SketchMapia compares
+          them against a map of the real environment, so that studying them no longer means scoring
+          every drawing by hand.
+        </p>
+        <div class="cta-row">
+          <a class="btn" href="{% url 'generalizingmaps:map' %}" target="_blank">Start SKETCHMAPIA</a>
+          <a class="btn alt" href="{% url 'documentation' %}">Read the Documentation</a>
         </div>
-        <p>The step-by-step instruction of how to use the software can be found at the associated github repository:  <a style="color:#7AB629" href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/README.md" target="_blank" >
-    SketchMapia
-  </a>.</p>
-       <div class="tiny-bar"></div>
+      </div>
 
-       <h2>References</h2>
-       <green-title>
-    <a href="https://doi.org/10.1371/journal.pone.0304696" target="_blank" rel="noopener noreferrer" class="title">
-      An algorithmic approach to detect generalization in sketch maps from sketch map alignment
-    </a>
-    <div class="content">
-     Manivannan C.; Krukar J.; Schwering A.
-Public Library of Science
-PloS one
-2024
-
+      <div class="hero-art">
+        <img class="back" src="{% static '//img/basemap_geivenbeck.jpg' %}" alt="OpenStreetMap base map of Gievenbeck, Münster" />
+        <img class="front" src="{% static '//img/sketch_example_2.jpg' %}" alt="Hand-drawn sketch map of the same neighbourhood" />
+        <span class="caption hand">the same place, twice</span>
+      </div>
     </div>
-  </green-title>
-       <green-title>
-    <a href="https://doi.org/10.1016/j.jenvp.2022.101851" target="_blank" rel="noopener noreferrer" class="title">
-    Spatial generalization in sketch maps: A systematic classification
-    </a>
-    <div class="content">
-      Manivannan C.; Krukar J.; Schwering A.
-Academic Press
-Journal of Environmental Psychology
-2022
-
-    </div>
-  </green-title>
-       <green-title>
-    <a href="https://doi.org/10.1007/978-3-319-96385-3_19" target="_blank" rel="noopener noreferrer" class="title">
-    Distinguishing Sketch Map Types: A Flexible Feature-Based Classification
-    </a>
-    <div class="content">
-      Krukar J, Münzer S, Lörch L, Anacta VJ, Fuest S, Schwering A
-Springer International Publishing
-2018
-
-    </div>
-  </green-title>
-       <green-title>
-    <a href="https://www.tandfonline.com/doi/full/10.1080/13875868.2014.917378" target="_blank" rel="noopener noreferrer" class="title">
-     SketchMapia: Qualitative Representations for the Alignment of Sketch and Metric Maps
-    </a>
-    <div class="content">
-     Schwering, Angela; Wang, Jia; Chipofya, Malumbo; Jan, Sahib; Li, Rui; Broelemann, Klaus
-Spatial Cognition and Computation
-2014
-
-    </div>
-  </green-title>
-
   </div>
 
-  <div style="position:fixed;bottom:6px;right:10px;z-index:9999;font-size:11px;font-family:monospace;color:#555;background:rgba(255,255,255,0.8);padding:2px 8px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.15);" title="Deployed build">
-      {% if APP_VERSION %}
-          <a href="{{ VERSION_URL }}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">
-              {{ APP_VERSION }}{% if GIT_COMMIT_DATE %} &middot; {{ GIT_COMMIT_DATE }}{% endif %}
-          </a>
-      {% else %}
-          dev build
-      {% endif %}
+  <div class="col">
+    <div class="tiny-bar"></div>
+    <h2>About</h2>
+    <p>
+      Researchers have long sought to systematically study how people perceive and understand space.
+      Analysing sketch maps, though, has stayed a slow and largely manual process. SketchMapia is a
+      method for doing it systematically, for use in the social and natural sciences.
+    </p>
+    <p>The software helps an experimenter to analyse:</p>
+
+    <div class="qlist">
+      <div class="q">
+        <span class="rn hand">I</span>
+        <div>
+          <h3>Which features the participant remembered</h3>
+          <p>Of everything in the real environment, what appears in the drawing at all.</p>
+        </div>
+      </div>
+      <div class="q">
+        <span class="rn hand">II</span>
+        <div>
+          <h3>At which level of generalisation they recalled objects</h3>
+          <p>How far they abstracted: a row of shops drawn as one block, a junction simplified,
+             a whole area reduced to a single labelled shape.</p>
+        </div>
+      </div>
+      <div class="q">
+        <span class="rn hand">III</span>
+        <div>
+          <h3>Whether they recalled the correct spatial configuration</h3>
+          <p>Given what they drew, whether it was arranged correctly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="examples">
+    <div class="wide">
+      <div class="tiny-bar"></div>
+      <h2>Two drawings of one neighbourhood</h2>
+      <div class="ex-intro">
+        <p>
+          These sketch maps of Gievenbeck in Münster were drawn from memory by two participants.
+          Both kept Hensenstraße running east to west, both placed Rüschhausweg and Enschedeweg
+          either side of the block between them, and both remembered the Wartburg Grundschule and
+          St. Michael Kirche. Beyond that they diverge: one recalls shops, dormitories and side
+          streets the other leaves out entirely.
+        </p>
+      </div>
+
+      <div class="ex-grid">
+        <figure>
+          <img src="{% static '//img/sketch_example_1.jpg' %}" alt="Detailed hand-drawn sketch map showing streets, shops, schools and churches in Gievenbeck" loading="lazy" />
+          <figcaption>
+            <span class="label">the detailed one</span>
+            Side streets, dormitories, shops and a Sparkasse, drawn well beyond the main road layout.
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="{% static '//img/sketch_example_2.jpg' %}" alt="Sparser hand-drawn sketch map of the same neighbourhood" loading="lazy" />
+          <figcaption>
+            <span class="label">the sparse one</span>
+            The same streets, drawn more squarely, with only the landmarks that anchor them.
+          </figcaption>
+        </figure>
+      </div>
+
+      <figure class="basemap-full">
+        <img src="{% static '//img/basemap_geivenbeck.jpg' %}" alt="OpenStreetMap reference map of Gievenbeck, Münster, with landmarks labelled" loading="lazy" />
+        <figcaption>
+          <span class="label">and what is actually there</span>
+          The reference map both drawings are compared against. Every feature a participant drew is
+          matched by hand to its counterpart here before anything is measured.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="tiny-bar"></div>
+    <h2>Simplification is not error</h2>
+    <p>
+      A participant who draws four adjacent buildings as one block has not forgotten three of them.
+      They have abstracted, and that is worth measuring in its own right rather than counting as a
+      mistake.
+    </p>
+    <p>
+      So before any accuracy measure runs, SketchMapia applies the participant's own simplifications
+      to the reference map. If they merged four buildings, those four are merged on the reference
+      side too, and the comparison is made like for like. The kinds of simplification people make
+      are themselves recorded, which is how generalisation becomes something you can study rather
+      than something you have to correct for.
+    </p>
+
+    <div class="tiny-bar"></div>
+    <h2>Tutorials</h2>
+    <p>This video gives a short overview of SketchMapia and how to use it.</p>
+    <div class="video-wrap">
+      <iframe src="https://www.youtube.com/embed/4FtqnC3jiug"
+        title="SketchMapia Tutorial" loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen></iframe>
+    </div>
+    <p style="margin-top:22px;">
+      For key concepts, how to set up a study, and what each measure means, see the
+      <a href="{% url 'documentation' %}">documentation</a>. Source code and technical notes are on
+      <a href="https://github.com/ifgi-sil/SketchMapia-Microservices/blob/main/README.md" target="_blank" rel="noopener noreferrer">GitHub</a>.
+    </p>
+
+    <div class="tiny-bar"></div>
+    <h2>References</h2>
+
+    <div class="ref">
+      <a class="title" href="https://doi.org/10.1371/journal.pone.0304696" target="_blank" rel="noopener noreferrer">
+        An algorithmic approach to detect generalization in sketch maps from sketch map alignment
+      </a>
+      <div class="authors">Manivannan C.; Krukar J.; Schwering A.</div>
+      <div class="venue">PLoS ONE · Public Library of Science · 2024</div>
+    </div>
+    <div class="ref">
+      <a class="title" href="https://doi.org/10.1016/j.jenvp.2022.101851" target="_blank" rel="noopener noreferrer">
+        Spatial generalization in sketch maps: A systematic classification
+      </a>
+      <div class="authors">Manivannan C.; Krukar J.; Schwering A.</div>
+      <div class="venue">Journal of Environmental Psychology · Academic Press · 2022</div>
+    </div>
+    <div class="ref">
+      <a class="title" href="https://doi.org/10.1007/978-3-319-96385-3_19" target="_blank" rel="noopener noreferrer">
+        Distinguishing Sketch Map Types: A Flexible Feature-Based Classification
+      </a>
+      <div class="authors">Krukar J.; Münzer S.; Lörch L.; Anacta V. J.; Fuest S.; Schwering A.</div>
+      <div class="venue">Springer International Publishing · 2018</div>
+    </div>
+    <div class="ref">
+      <a class="title" href="https://www.tandfonline.com/doi/full/10.1080/13875868.2014.917378" target="_blank" rel="noopener noreferrer">
+        SketchMapia: Qualitative Representations for the Alignment of Sketch and Metric Maps
+      </a>
+      <div class="authors">Schwering A.; Wang J.; Chipofya M.; Jan S.; Li R.; Broelemann K.</div>
+      <div class="venue">Spatial Cognition and Computation · 2014</div>
+    </div>
+
+    <p style="margin-top:38px;">
+      <a class="btn" href="{% url 'generalizingmaps:map' %}" target="_blank">Start SKETCHMAPIA</a>
+      <a class="btn" href="{% url 'documentation' %}" target="_blank">Read DOCUMENTATION</a>
+    </p>
+  </div>
+
+  <footer>
+    Developed by the
+    <a href="https://www.uni-muenster.de/Geoinformatics/en/sil/" target="_blank" rel="noopener noreferrer">Spatial Intelligence Lab</a>,
+    Institute for Geoinformatics, University of Münster.
+  </footer>
+
+  <div id="buildbadge" title="Deployed build">
+    {% if APP_VERSION %}
+      <a href="{{ VERSION_URL }}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;">
+        {{ APP_VERSION }}{% if GIT_COMMIT_DATE %} &middot; {{ GIT_COMMIT_DATE }}{% endif %}
+      </a>
+    {% else %}
+      dev build
+    {% endif %}
   </div>
 
 </body>
