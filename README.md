@@ -28,22 +28,144 @@ Every service is containerized, published automatically to the GitHub Container 
 
 Each analysis method lives in its own Django microservice with its own port and URL prefix, orchestrated through Docker Compose. The main application calls the services from the browser — directly via ports in local development, via Apache reverse-proxy paths in production.
 
-<p align="center">
-  <img src="./docs/images/architecture.png" alt="Architecture" width="750"/>
-</p>
+<!---<p align="center">
+  <img src="./docs/images/architecture_sketchmapia.png" alt="Architecture for Sketchmapia" width="750"/>
+</p>-->
 
-### Data Flow
+```mermaid
+flowchart TB
+subgraph Browser["Browser - localhost:8000"]
+HTML["generalizingmaps.html"]
+Analyzer["sketchmap analyzer (Web Page)"]
+JS["project.js"]
+Result["Result Summary Table with selected metrics"]
+end
 
-<p align="center">
-  <img src="./docs/images/dataflow.png" alt="Data Flow" width="700"/>
-</p>
+subgraph Container["SketchMapia Microservices Container"]
+    GenMaps["Generalized Maps (Basemap & Sketchmaps)"]
+    Gen["generalizations : 8001"]
+    Comp["completeness : 8002"]
+    Acc["accuracy / qualitativerelations : 8003"]
+    Val["validation : 8004"]
+    Gmda["gmda : 8005"]
+    Bdr["bdr : 8006"]
+    Boundary["Container Boundary"]
 
-<details>
-<summary><b>Request lifecycle diagram</b></summary>
-<p align="center">
-  <img src="./docs/images/request_lifecycle.png" alt="Request Lifecycle" width="700"/>
-</p>
-</details>
+    GenMaps -- creates --> Gen
+    GenMaps --> Comp
+    GenMaps --> Acc
+    GenMaps --> Bdr
+    GenMaps --> Gmda
+
+    Boundary -. compulsory .-> Comp
+    Boundary -. compulsory .-> Gen
+
+    Comp -. output .-> Boundary
+    Acc -. output .-> Boundary
+    Gen -. output .-> Boundary
+    Gmda -. output .-> Boundary
+    Bdr -. output .-> Boundary
+end
+
+HTML --> Analyzer
+Analyzer -- "Selected microservices" --> Boundary
+Analyzer -- "sends the data" --> JS
+Boundary -- "JSON metrics for selected microservices" --> JS
+JS --> Result
+```
+
+### Request Lifecycle
+```mermaid
+sequenceDiagram
+    autonumber
+
+    box rgba(122,182,41,0.10) 👤 User + Orchestrator
+        actor R as Researcher
+        participant UI as Sketchmap Analyser (browser 8000)
+    end
+    box rgba(230,160,30,0.14) 🧹 Prep (researcher-initiated)
+        participant V as validation 8004
+    end
+    box rgba(122,182,41,0.22) ⚙️ Pipeline core
+        participant G as generalizations 8001
+    end
+    box rgba(70,130,180,0.14) 📊 Metric services
+        participant C as completeness 8002
+        participant A as accuracy 8003
+        participant M as gmda 8005
+        participant B as bdr 8006
+    end
+
+    Note over R,B: getServiceUrl() picks localhost:PORT in dev, same-origin via Apache in prod.
+
+    rect rgba(122,182,41,0.10)
+        Note over R,UI: 1. Load
+        R->>UI: Load project (base map + sketch maps)
+    end
+
+    rect rgba(230,160,30,0.14)
+        Note over R,V: 2. Optional geometry cleanup (separate from Analyse)
+        opt Validation
+            R->>UI: Run validation on base / sketch
+            UI->>V: POST /validation/validate/ (action=preview)
+            V-->>UI: audit { snap, merge }
+            R->>UI: Approve snaps / merges
+            UI->>V: POST /validation/validate/ (action=apply)
+            V-->>UI: modifiedStreets (corrected geometry)
+            Note over UI: Written back into allOriginalSketchMaps[...]
+        end
+    end
+
+    rect rgba(122,182,41,0.10)
+        Note over R,UI: 3. Align + trigger
+        R->>UI: Align sketch features to base features
+        R->>UI: Click Analyse, Run Analysis
+    end
+
+    loop For each sketch map
+
+        rect rgba(122,182,41,0.22)
+            Note over UI,G: 4. Generalization (runs first, once per sketch map)
+            UI->>G: POST /generalizations/requestFME/ (basedata, sketchdata, aligndata)
+            G-->>UI: generalized base map (features tagged with gen_id)
+            Note over UI: Cached in allGenBaseMap[sketchmap]. prepareDataForQualifier() filters into metricdata / sketchdata
+        end
+
+        rect rgba(70,130,180,0.14)
+            Note over UI,B: 5. Metrics
+            par Base analysis (Promise.all)
+                UI->>C: POST /completeness/analyzeCompleteness/
+                C-->>UI: landmark / street / overall completeness
+            and
+                opt Accuracy checked
+                    UI->>A: POST /accuracy/analyzeQualitative/
+                    A-->>UI: per-calculus counts + precision/recall + QCNs
+                end
+            end
+            opt Buildings GMDA checked
+                UI->>M: POST /gmda/calculateGMDA/ (from allGenBaseMap)
+                M-->>UI: 6 metrics + nTL/nDL
+            end
+            opt Junctions GMDA checked
+                UI->>M: POST /gmda/calculateJunctionGMDA/
+                M-->>UI: 6 metrics + junction layers
+            end
+            opt BDR variants
+                UI->>B: POST /bdr/calculateLandmarksBDR/ and /calculateJunctionsBDR/
+                B-->>UI: r, DI, phi, theta, alpha1, alpha2
+            end
+        end
+
+        Note over UI: Write into genResultArray, populateGMDAResults() renders row in #OrderingofMaps
+    end
+
+    rect rgba(122,182,41,0.10)
+        Note over R,UI: 6. Export
+        R->>UI: Download Results
+        Note over UI: JSZip builds ResultSummary.csv + DetailedOutput CSVs + QualitativeRelations/ (if Accuracy ran)
+        UI-->>R: results.zip
+    end
+```
 
 ## 🧩 Services
 

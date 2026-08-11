@@ -1,5 +1,5 @@
-# bdr — Bi-Dimensional Regression Microservice
-
+# bdr — a SKETCHMAPIA Microservice
+# Bi-Dimensional Regression
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Django](https://img.shields.io/badge/Django-microservice-green)
 ![Docker](https://img.shields.io/badge/Docker-compose-2496ED)
