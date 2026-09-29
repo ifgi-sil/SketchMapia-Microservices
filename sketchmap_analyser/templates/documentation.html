@@ -312,6 +312,7 @@
       <a href="#example">Worked example</a>
       <a href="#stats">Into your stats software</a>
       <a href="#reporting">Reporting in a paper</a>
+      <a href="#privacy">Data privacy</a>
       <a href="#limits">Limitations</a>
       <a href="#research">Research background</a>
       <a href="#technical">Technical reference</a>
@@ -334,15 +335,14 @@
       </p>
 
       <p class="reveal d1">
-        Traditionally this meant hand-coding: two raters, a scoring sheet, an inter-rater reliability check, and weeks
-        of work per study. The Sketch Map Analyser replaces that with a set of automatic, reproducible measurements.
-        You give it a <strong>reference map</strong> of the real environment and a participant's <strong>sketch map</strong>,
-        tell it which drawn features correspond to which real ones, and it returns a row of numbers per participant.
+        Traditionally this meant a lot of manual work leading to inconsistency in analysis. The Sketch Map Analyser replaces that with a systematic process resulting in reproducible measurements.
+        You give it a <strong>base map</strong> of the real environment and a participant's <strong>sketch map</strong>,
+        tell it which drawn features correspond to which real ones, and it measures the completeness and accuracy.
       </p>
 
       <div class="tip reveal">
-        <strong>What you do not need:</strong> any programming, any command line, any GIS experience. You work in a
-        web page: load maps, click features to match them up, press <em>Analyse</em>, download a spreadsheet.
+        <strong>What you do not need:</strong> any programming, any command line experience. You work in a
+        web page: load maps, annotate, and match features, press <em>Analyse</em>, and download the results as a zip containing spreadsheets.
       </div>
 
       <h3>The three questions</h3>
@@ -352,31 +352,30 @@
         <div class="step reveal">
           <span class="num">1</span>
           <h4>What did they remember?</h4>
-          <p>Of everything that exists in the real environment, how much appears in the drawing at all? This is a
-             recall measure — it says nothing about whether things were placed correctly.</p>
+          <p>Of everything that exists in the real environment, how much appears in the drawing at all? </p>
           <span class="q">Completeness</span>
         </div>
         <div class="step reveal d1">
           <span class="num">2</span>
           <h4>How much did they simplify?</h4>
-          <p>People collapse a row of shops into one block, or straighten a curved street. The tool identifies these
-             simplifications so they are not mistaken for memory errors.</p>
+          <p>People collapse a row of shops into one block, or generalize streets. The tool identifies these
+             simplifications so they are not mistaken for incompleteness.</p>
           <span class="q">Generalization</span>
         </div>
         <div class="step reveal d2">
           <span class="num">3</span>
           <h4>Did they get the layout right?</h4>
-          <p>Given what they drew, is it arranged correctly? Measured two ways: whether relationships hold
-             (is the park still north of the station?) and whether distances and angles are accurate.</p>
+          <p>Given what they drew, is it arranged correctly? Measured two ways: whether qualitative relationships hold
+             (is the station 'right' of the street?) and whether distances and angles are accurate.</p>
           <span class="q">Accuracy measures</span>
         </div>
       </div>
 
       <p class="reveal">
-        Keeping these separate is the central design decision. A participant who draws only three landmarks but places
-        them perfectly is <em>not</em> the same as one who draws twenty landmarks in a jumble — yet a single "accuracy"
-        score would rate them similarly. Here, the first has low completeness and high configural accuracy; the second
-        the reverse. Both patterns are theoretically meaningful, and you can analyse them independently.
+        Keeping these three separate is the central design decision. A single accuracy score cannot absorb them.
+        A landmark that was never drawn, a landmark that was merged into its neighbour, and a landmark drawn in
+        the wrong place all register as the same thing — error. Reported separately, each question is answered on
+        its own terms: what was memorized, how it was simplified, and how well what remains is arranged.
       </p>
     </section>
 
@@ -392,10 +391,9 @@
 
       <div class="glossary">
         <div class="gl reveal"><strong>Base map (or reference map)</strong>
-          <p>The ground truth — an accurate map of the real environment your participants are drawing from memory.
-             Usually derived from OpenStreetMap.</p></div>
+          <p>The ground truth — a topographic map or study environment.</p></div>
         <div class="gl reveal d1"><strong>Sketch map</strong>
-          <p>The participant's drawing, traced into the software so that each drawn object becomes a separate, countable
+          <p>The participant's drawing, annotated into the software so that each drawn object becomes a separate, countable
              feature.</p></div>
         <div class="gl reveal d2"><strong>Feature</strong>
           <p>A single object on either map: one building, one street segment, one park. The unit everything is counted in.</p></div>
@@ -407,19 +405,17 @@
              every measurement depends on them.</p></div>
         <div class="gl reveal d1"><strong>Generalization</strong>
           <p>A simplification the participant made — merging several buildings into one, collapsing a roundabout to a
-             crossing, drawing an area as a line.</p></div>
+             crossing.</p></div>
         <div class="gl reveal d2"><strong>Generalized base map</strong>
           <p>The reference map rebuilt at the participant's level of detail. This — not the original — is what accuracy
              measures compare against.</p></div>
         <div class="gl reveal d3"><strong>Junction</strong>
-          <p>A point where two or more streets meet. Junctions can be analysed instead of buildings, which is useful for
+          <p>A point where three or more streets meet. Junctions can be analysed instead of buildings, which is useful for
              route-based or street-dominated sketches.</p></div>
       </div>
 
       <h3>Why the "generalized" base map matters</h3>
-      <p class="reveal">
-        This is the single most important idea in the tool, and the one most easily missed.
-      </p>
+
       <div class="quote reveal">
         Suppose the real environment contains three adjacent shops. Your participant draws one rectangle and labels it
         "the shops." Scored naively, that is two omissions and one misplaced building.
@@ -429,9 +425,7 @@
         map into one, matching what the participant did. The comparison is then like-for-like.
       </div>
       <p class="reveal">
-        The consequence for interpretation: accuracy scores tell you how well someone laid out
-        <em>the world as they conceived it</em>, not how well they reproduced a cartographer's map. If you want the
-        latter, completeness is where the omissions show up.
+        The consequence for interpretation: accuracy is scored against the world at the level of detail the participant drew, not against the base map as a cartographer would draw it. Departures from the reference map are reported elsewhere : missing information in completeness, simplifications in generalization.
       </p>
     </section>
 
@@ -444,37 +438,13 @@
       <table class="reveal">
         <tr><th>You need</th><th>Notes</th></tr>
         <tr><td>A defined study area</td><td>Bounded and consistent across participants. Everyone should be drawing the same environment.</td></tr>
-        <tr><td>A reference map of that area</td><td>Loaded into the software from OpenStreetMap data.</td></tr>
-        <tr><td>Participants' sketch maps</td><td>Drawn on paper and traced in, or drawn directly in the editor.</td></tr>
-        <tr><td>Time for alignment</td><td>The manual step. Budget realistically — see below.</td></tr>
+        <tr><td>A base map of that area</td><td>Loaded into the software from OpenStreetMap data.</td></tr>
+        <tr><td>Participants' sketch maps</td><td>Drawn on paper and annotated in the app, or drawn directly in the app editor.</td></tr>
+        <tr><td>Alignment</td><td>The manual process of matching sketch map features with base map.</td></tr>
+        <tr><td>Route</td><td>A predefined path marked on the base map, required for qualitative accuracy. A route is an ordered sequence of connected street segments.</td></tr>
       </table>
-
-      <h3>Practical guidance</h3>
-
-      <p class="reveal"><strong>Standardize the drawing task.</strong> Sketch maps are highly sensitive to instructions.
-         "Draw the campus" and "draw your route from the station to the library" elicit different representations
-         (survey versus route knowledge). Whatever you choose, keep it identical across participants and report it.</p>
-
-      <p class="reveal"><strong>Keep paper size and orientation constant.</strong> The tool normalizes for overall scale
-         and rotation, but a participant who runs out of paper compresses one side of their map — which becomes a real
-         distortion in the data rather than an artefact you can remove.</p>
-
-      <p class="reveal"><strong>Expect alignment to dominate your time.</strong> Analysis itself takes seconds; deciding
-         that "this blob is the library" takes judgement. For ambiguous drawings, consider having two researchers align
-         independently and reporting agreement — the automated measures are perfectly reliable, but the alignment they
-         rest on is a human coding decision like any other.</p>
-
-      <p class="reveal"><strong>Decide in advance whether you are analysing buildings or junctions.</strong> Landmark-based
-         measures need enough matched buildings to be stable; junction-based measures suit street-heavy or route sketches.
-         You can run both, but choose your primary measure before looking at the data.</p>
-
-      <div class="note reveal">
-        <strong>Sample size within a map.</strong> The configural measures compare every pair of features. With only two
-        or three matched landmarks there are very few pairs, and the scores become unstable — a single misplaced building
-        can swing them dramatically. Treat results from sparse sketches with caution, and consider reporting the number
-        of matched features alongside each score.
-      </div>
     </section>
+
 
     <!-- ============ RUNNING ============ -->
     <section>
@@ -500,11 +470,6 @@
         <li><strong>Download Results</strong> — a zip of spreadsheets ready for your statistics software.</li>
       </ol>
 
-      <div class="tip reveal">
-        Running more measures costs almost nothing in time, and you cannot go back and add a measure to an old export
-        without re-running. Unless you have a preregistered reason not to, tick everything — then analyse only what you
-        planned to.
-      </div>
     </section>
 
     <!-- ============ RESULTS ============ -->
@@ -520,55 +485,129 @@
       <div class="tabs reveal">
         <div class="tabbar">
           <button class="tabbtn active" data-tab="t-comp">Completeness</button>
-          <button class="tabbtn" data-tab="t-rel">Relational accuracy</button>
-          <button class="tabbtn" data-tab="t-conf">Configural accuracy</button>
-          <button class="tabbtn" data-tab="t-bdr">Overall distortion</button>
+          <button class="tabbtn" data-tab="t-gen">Generalization</button>
+          <button class="tabbtn" data-tab="t-rel">Qualitative accuracy</button>
+          <button class="tabbtn" data-tab="t-conf">GMDA</button>
+          <button class="tabbtn" data-tab="t-bdr">Bidimensional Regression</button>
         </div>
 
         <!-- COMPLETENESS -->
         <div class="tabpane active" id="t-comp">
-          <p>How much of the environment made it into the drawing. A pure recall measure.</p>
+          <p>How much of the environment made it into the drawing.</p>
 
           <div class="metric">
             <h4>Landmark completeness</h4>
             <span class="range">0–100% · higher = more recalled</span>
             <p class="plain">The percentage of reference landmarks that appear in the sketch.</p>
             <div class="interp"><strong>Interpretation.</strong> A memory-quantity measure, closely analogous to
-              free-recall scores. Sensitive to encoding, exposure duration and familiarity.</div>
-            <div class="watch"><strong>Watch out:</strong> counted against the <em>generalized</em> reference map, so
-              merging several buildings into one does not count as omissions. This is deliberate, but it means
-              completeness is slightly more forgiving than a raw feature count would be.</div>
+              free-recall scores: counted against the <em>generalized</em> reference map, so
+              merging several buildings into one does not count as omissions. </div>
+
           </div>
 
           <div class="metric">
             <h4>Street completeness</h4>
             <span class="range">0–100% · higher = more recalled</span>
             <p class="plain">The same calculation for street segments rather than landmarks.</p>
-            <div class="interp"><strong>Interpretation.</strong> Often dissociates from landmark completeness. Route
-              learners commonly recall the streets they travelled while omitting landmarks off-route; survey learners
-              often show the opposite. Reporting both separately is usually more informative than the average.</div>
+            <div class="interp"><strong>Interpretation.</strong> Dissociates from landmark completeness.Tells the 'memory' of the street network. Reporting both separately is usually more informative than the average.</div>
           </div>
 
           <div class="metric">
             <h4>Overall completeness</h4>
             <span class="range">0–100% · higher = more recalled</span>
-            <p class="plain">The mean of the two measures above.</p>
-            <div class="watch"><strong>Watch out:</strong> an unweighted average. If your environment has 12 landmarks and
-              90 street segments, both still contribute equally. Check the two components before relying on the composite.</div>
+            <p class="plain">The mean of the two measures above.It is an unweighted average. If your environment has 12 landmarks and
+              90 street segments, both still contribute equally. Check the two components before relying on the composite.</p>
+
+          </div>
+        </div>
+
+        <!-- GENERALIZATION -->
+        <div class="tabpane" id="t-gen">
+          <p>
+            The amount of simplifications done by the participant. Detected automatically from the alignments you made
+            — several base-map features mapped to one sketch feature is a generalization; the type depends on the
+            geometry. Counts are separated for streets and buildings, and every instance is listed in
+            <code>GeneralizationDetailedOutput.csv</code> with its underlying feature ids.
+          </p>
+
+          <h4>Streets</h4>
+
+          <div class="metric">
+            <h4>Omission Merge</h4>
+            <span class="range">count</span>
+            <p class="plain">Two or more real street segments drawn as one sketch segment.</p>
+          </div>
+
+          <div class="metric">
+            <h4>Junction Merge</h4>
+            <span class="range">count</span>
+            <p class="plain">Two or more real junctions collapsed to one in the drawing.</p>
+          </div>
+
+          <div class="metric">
+            <h4>Roundabout Collapse</h4>
+            <span class="range">count</span>
+            <p class="plain">A real roundabout drawn as a plain crossing.</p>
+          </div>
+
+          <div class="metric">
+            <h4>Abstraction to show existence (streets)</h4>
+            <span class="range">count</span>
+            <p class="plain">A number of streets in base map represented by a number of streets in sketch map without
+               having a direct one-one relation.</p>
+          </div>
+
+          <h4>Buildings</h4>
+
+          <div class="metric">
+            <h4>Amalgamation</h4>
+            <span class="range">count</span>
+            <p class="plain">Several adjacent buildings drawn as one building in sketch map.</p>
+          </div>
+
+          <div class="metric">
+            <h4>Collapse</h4>
+            <span class="range">count</span>
+            <p class="plain">A building or area drawn as a point.</p>
+          </div>
+
+          <div class="metric">
+            <h4>Abstraction to show existence (buildings)</h4>
+            <span class="range">count</span>
+            <p class="plain">A group of buildings represented by a group of buildings without having a direct one to
+               one relation between individual buildings of the group.</p>
+          </div>
+
+          <h4>Totals</h4>
+
+          <div class="metric">
+            <h4>Total street / building generalizations</h4>
+            <span class="range">count</span>
+            <p class="plain">Sums of the categories above, separately for streets and buildings.</p>
+          </div>
+
+          <div class="metric">
+            <h4>Overall generalization</h4>
+            <span class="range">count</span>
+            <p class="plain">Sum of both.</p>
+          </div>
+
+          <div class="note reveal" style="margin-top:1em;">
+            Generalization is not treated as error: the accuracy tabs are computed against the
+            <em>generalized</em> base map (see &ldquo;Why the generalized base map matters&rdquo;).
           </div>
         </div>
 
         <!-- RELATIONAL -->
         <div class="tabpane" id="t-rel">
           <p>
-            Whether the <em>relationships</em> between features are preserved, independent of metric precision. A sketch
-            can be geometrically hopeless yet relationally perfect: the church still inside the square, the shop still on
-            the left of the road, the streets still crossing in the same order.
+            Whether the <em>relationships</em> between features (the church still inside the square, the shop still on
+            the left of the road, the streets still crossing in the same order) are preserved, independent of metric precision.
           </p>
           <p>
             The software extracts every such relationship from both maps and compares them one by one, across six
-            families: containment and overlap, street–area topology, left/right of a road, relative direction between
-            streets, street connectivity, and order along a route. Each family gets its own score; two summary measures
+            families: landmark topology, street-landmark topology, left/right of a road, relative direction between
+            streets, street connectivity, and order of landmarks along a route. Each family gets its own score; two summary measures
             aggregate across all of them.
           </p>
 
@@ -587,22 +626,11 @@
             <p class="plain">Of all the relationships present in the real environment, the proportion the participant
                captured correctly.</p>
             <div class="interp"><strong>Interpretation.</strong> Penalized by omission. Typically much lower than
-               precision, because the reference environment contains far more relationships than anyone draws. Do not be
-               alarmed by low values — compare across conditions rather than against an absolute standard.</div>
-            <div class="watch"><strong>Watch out:</strong> these are the standard information-retrieval definitions, not
-               "recall" in the memory sense. Consider renaming them in your write-up to avoid confusing readers.</div>
+               precision, because the reference environment contains far more relationships than anyone draws.</div>
+
           </div>
 
-          <div class="metric">
-            <h4>Per-family correctness</h4>
-            <span class="range">0–100% · higher = better</span>
-            <p class="plain">The same match rate calculated separately for each relationship family.</p>
-            <div class="interp"><strong>Interpretation.</strong> Useful for theoretically targeted predictions — for
-               example, that route learners preserve sequential order along a path better than global direction. Look at
-               the individual families rather than only the aggregate.</div>
-            <div class="watch"><strong>Watch out:</strong> families with very few relationships in a given map produce
-               noisy percentages. The counts are exported alongside, so check them.</div>
-          </div>
+
         </div>
 
         <!-- CONFIGURAL -->
@@ -656,8 +684,7 @@
             <p class="plain">The same distance comparison, but keeping the sign.</p>
             <div class="interp"><strong>Interpretation.</strong> Positive means the participant systematically expanded
                distances; negative means they compressed them. Where DistAcc measures error magnitude, this measures
-               <em>direction</em> — the signature of systematic distortion rather than noise.</div>
-            <div class="watch"><strong>Watch out:</strong> near-zero can mean either no bias or expansions and compressions
+               <em>direction.</em>Near-zero can mean either no bias or expansions and compressions
                cancelling out. Always report it with DistAcc.</div>
           </div>
 
@@ -667,7 +694,7 @@
             <p class="plain">How well the angles between pairs of features are preserved.</p>
             <div class="interp"><strong>Interpretation.</strong> A finer-grained companion to CanAcc. Canonical direction
                only asks "roughly north?"; this asks "at the right bearing?" A participant can score well on one and
-               poorly on the other, which is itself informative.</div>
+               poorly on the other.</div>
           </div>
 
           <div class="metric">
@@ -675,10 +702,8 @@
             <span class="range">−180° to +180° · 0 = aligned</span>
             <p class="plain">Whether the whole drawing is systematically rotated relative to reality. Positive is
                clockwise, negative counterclockwise.</p>
-            <div class="interp"><strong>Interpretation.</strong> One of the most theoretically loaded measures. Systematic
-               rotation often reflects an alignment to a reference frame other than north — a dominant street grid, a
-               habitual approach direction, or the orientation the environment was learned from.</div>
-            <div class="watch"><strong>Watch out:</strong> it is circular data. Do not average rotation across participants
+            <div class="interp"><strong>Interpretation.</strong>  Systematic rotation often reflects an alignment to a reference frame other than north — a dominant street grid, a
+               habitual approach direction, or the orientation the environment was learned from. It is circular data. Do not average rotation across participants
                with an ordinary mean — +170° and −170° average to 0°, implying no bias when both were rotated nearly
                half a turn. Use circular statistics.</div>
           </div>
@@ -704,7 +729,7 @@
 
           <div class="metric">
             <h4>DI — distortion index</h4>
-            <span class="range">0 upwards · lower = better</span>
+            <span class="range">lower = better</span>
             <p class="plain">The residual distortion, computed directly from <em>r</em>.</p>
             <div class="interp"><strong>Interpretation.</strong> Zero is a perfect match. Reports the same information as
                <em>r</em> on a scale where bigger means worse — report one or the other, not both as independent findings.</div>
@@ -714,8 +739,7 @@
             <h4>phi — scale factor</h4>
             <span class="range">around 1 = same scale</span>
             <p class="plain">How much larger or smaller the drawing is than reality, overall.</p>
-            <div class="interp"><strong>Interpretation.</strong> Usually a nuisance parameter driven by paper size, but
-               meaningful if drawing scale is manipulated or free.</div>
+            <div class="interp"><strong>Interpretation.</strong> A  parameter driven by paper size.</div>
           </div>
 
           <div class="metric">
@@ -730,7 +754,7 @@
             <h4>alpha1, alpha2 — translation</h4>
             <span class="range">horizontal and vertical shift</span>
             <p class="plain">How far the fitted configuration is displaced.</p>
-            <div class="interp"><strong>Interpretation.</strong> Almost always a nuisance parameter — it mostly reflects
+            <div class="interp"><strong>Interpretation.</strong> It mostly reflects
                where on the page someone began drawing. Rarely reported.</div>
           </div>
         </div>
@@ -766,7 +790,7 @@
       <p class="reveal"><strong>How to read it.</strong></p>
 
       <p class="reveal">
-        They drew roughly a third of the environment. That is unremarkable — most people do.
+        They drew roughly a third of the environment.
       </p>
       <p class="reveal">
         The gap between CanOrg (0.10) and CanAcc (0.89) is the story. CanOrg is low almost entirely because two-thirds of
@@ -783,8 +807,7 @@
         The interesting result is RotBias at −30°. Angular accuracy is noticeably lower than distance accuracy (0.79
         against 0.94), and this rotation is why: the whole configuration is turned roughly 30° counterclockwise. That is
         not random error. It suggests the participant encoded the environment relative to some frame other than north —
-        a main street's orientation, or the direction they habitually approach from. Worth checking whether it replicates
-        across participants; a consistent rotation across a sample is a finding, not noise.
+        a main street's orientation, or the direction they habitually approach from.
       </p>
 
       <div class="tip reveal">
@@ -827,6 +850,18 @@
       </div>
     </section>
 
+    <!-- ============ DATA PRIVACY ============ -->
+    <section>
+      <div class="tiny-bar"></div>
+      <h2 id="privacy">Data privacy</h2>
+
+      <p class="reveal">
+        This tool is designed for the analysis of anonymised sketch maps. No sketch map images are stored on the
+        server; they stay on the user's device. Only the annotated features (the digitised geometry and their
+        alignments) are transmitted for analysis.
+      </p>
+    </section>
+
     <!-- ============ LIMITATIONS ============ -->
     <section>
       <div class="tiny-bar"></div>
@@ -839,13 +874,7 @@
       <div class="glossary">
         <div class="gl reveal"><strong>Alignment is a human judgement</strong>
           <p>Everything downstream rests on your decisions about which drawn feature is which. Reliable in clear cases,
-             genuinely ambiguous in others. Treat it as coding, with the same safeguards.</p></div>
-        <div class="gl reveal d1"><strong>Sparse sketches give unstable scores</strong>
-          <p>Configural measures use feature pairs. Few matched features means few pairs, and single errors dominate.
-             Consider a minimum-features criterion, set in advance.</p></div>
-        <div class="gl reveal d2"><strong>Drawing ability is a confound</strong>
-          <p>The tool measures the drawing, not the mental representation directly. Motor skill, confidence and
-             willingness to commit to detail all contribute.</p></div>
+             genuinely ambiguous in others. </p></div>
         <div class="gl reveal d3"><strong>Scores are relative, not absolute</strong>
           <p>There is no established norm for a "good" CanOrg. These measures are for comparing conditions, groups or
              time points — not for classifying an individual.</p></div>

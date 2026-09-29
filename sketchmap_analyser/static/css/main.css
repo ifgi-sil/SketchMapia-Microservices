@@ -361,12 +361,45 @@ input.toggle {
 display: none;
  }
 
-#basemapmenu {
+#basemapmenu,
+#sketchmapmenu {
 background: #7AB629;
 height:0.85rem;
 width:100%;
 border-bottom-left-radius: 3px;
 border-bottom-right-radius: 3px;
+}
+
+#sketchmapmenu {
+    position: relative;
+    z-index: 1000;
+}
+
+#sketchmapmenu .sm-toggle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    line-height: 0.85rem;
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+    pointer-events: all;
+    margin: 0;
+}
+
+/* Applied by JS to a .modal-option label whose analysis rule cannot be
+   satisfied by ANY sketchmap. The checkbox itself is disabled; this just
+   makes the "why" obvious visually. The label's own title attribute
+   supplies the reason on hover. */
+.modal-option.rule-failed {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.modal-option.rule-failed input[type="checkbox"] {
+    outline: 2px solid #dc3545;
+    outline-offset: 1px;
+    cursor: not-allowed;
 }
 
 .before, .after{

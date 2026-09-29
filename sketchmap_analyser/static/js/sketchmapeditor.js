@@ -540,6 +540,24 @@ baseMap.on('pm:create', function (event) {
 });
 
 baseMap.on('pm:remove', function (e) {
+    // Mirror the sketch-side cleanup: if the deleted base feature was
+    // part of an alignment, clear the paired sketch feature's aligned/
+    // isRoute/group flags (so it goes back to dotted styling) and drop
+    // the alignment entry itself.
+    try {
+        var removedId = e.layer.feature && e.layer.feature.properties
+            ? e.layer.feature.properties.id
+            : null;
+        if (removedId != null) {
+            removeAlignmentByBaseID([removedId]);
+        }
+    } catch (err) {
+        console.warn("base pm:remove alignment cleanup skipped:", err);
+    }
+    alignSketchID = [];
+    alignBaseID = [];
+    sketchOtypearray = [];
+    baseOtypearray = [];
     drawnItems.removeLayer(e.layer);
 });
 
@@ -820,9 +838,35 @@ if (drawnSketchItems != null) {
                allOriginalSketchMaps[sketchMaptitle] = drawnSketchItems;
                sketchOriginalLayer.clearLayers();
                sketchOriginalLayer.addLayer(drawnSketchItems);
-                
+               // If the previous drawnSketchItems had been added directly to sketchMap
+               // (e.g. via the "first-time" path at line 1054), then sketchOriginalLayer
+               // was never on the map and the new features would render invisibly.
+               // Mirror the thumbnail-click guard so the group is guaranteed on the map.
+               if (sketchMap && !sketchMap.hasLayer(sketchOriginalLayer)) {
+                   sketchOriginalLayer.addTo(sketchMap);
+               }
+
                 styleLayers();
                 hoverfunction();
+
+                // Re-bind permanent tooltips on the fresh layers if the label
+                // button was showing labels before Save. The button's current
+                // state is 'label-invisible' when labels are on screen (its
+                // NEXT click would hide them).
+                try {
+                    if (labelButtonSketchMap
+                        && typeof labelButtonSketchMap.state === 'function'
+                        && labelButtonSketchMap.state() === 'label-invisible') {
+                        drawnSketchItems.eachLayer(function(slayer){
+                            var label = slayer.feature.properties.gen_id
+                                || slayer.feature.properties.sid
+                                || String(slayer.feature.properties.id);
+                            slayer.bindTooltip(label, {permanent:true});
+                        });
+                    }
+                } catch (e) {
+                    console.warn("label rebind skipped:", e);
+                }
 
                 BooleanEditSketchMode = false;
                 alignmentArraySingleMap = response.updated_alignment;
@@ -876,7 +920,17 @@ function makeModalMovable(modalId) {
 
 function addClickBase(){
 drawnItems.eachLayer(function(blayer){
+        // [debug] warn if this layer already has click listeners before we add another
+        var __existing = (blayer._events && blayer._events.click) ? blayer._events.click.length : 0;
+        if (__existing > 0) {
+            console.warn("[addClickBase] existing click handlers on id",
+                blayer.feature.properties.id, "=", __existing);
+        }
         blayer.on('click',function(e){
+        // [debug] log every base click so we can trace alignBaseID
+        console.log("[base click]",
+            "id:", blayer.feature.properties.id,
+            "wasSelected:", blayer.feature.properties.selected);
         if(blayer.feature.properties.selected==false){
             blayer.feature.properties.selected=true;
             alignBaseID.push(blayer.feature.properties.id);
@@ -891,6 +945,7 @@ drawnItems.eachLayer(function(blayer){
             delete baseOtypearray[blayer.feature.properties.id];
             styleLayers();
         }
+        console.log("[base click] alignBaseID after:", JSON.stringify(alignBaseID));
     });
     });
 
@@ -1506,6 +1561,11 @@ function checkConnectivityMismatch(
 
 
     $('#alignbutton').click(async function(){
+
+    // [debug] snapshot selection state right before conflict / connectivity checks
+    console.log("[align click]",
+        "alignBaseID:", JSON.stringify(alignBaseID),
+        "alignSketchID:", JSON.stringify(alignSketchID));
 
     const conflicts =
         findAlignmentConflicts(
@@ -2158,6 +2218,36 @@ if (alignmentArraySingleMap[i].SketchAlign[0].some(item => alignSketchID.include
 
 }
 
+// Base-side counterpart of removeAlignment: given base feature ids that
+// were just removed (or need to be un-aligned), drop the matching entries
+// from alignmentArraySingleMap and reset the paired sketch features so
+// they render as dotted (unaligned).
+function removeAlignmentByBaseID(alignBaseIDList){
+
+for (var i in alignmentArraySingleMap){
+
+if (alignmentArraySingleMap[i].BaseAlign){
+if (alignmentArraySingleMap[i].BaseAlign[0].some(function(item){ return alignBaseIDList.includes(item); })){
+ drawnSketchItems.eachLayer(function (slayer){
+   if ((alignmentArraySingleMap[i].SketchAlign != null) && (alignmentArraySingleMap[i].SketchAlign[0]).includes(slayer.feature.properties.sid)){
+    slayer.feature.properties.aligned = false;
+    slayer.feature.properties.isRoute = null;
+    slayer.feature.properties.group = null;
+   }
+ });
+     drawnItems.eachLayer(function(blayer){
+     if((alignmentArraySingleMap[i].BaseAlign[0]).includes(blayer.feature.properties.id)){
+        blayer.feature.properties.aligned=false;
+     }
+     });
+     delete alignmentArraySingleMap[i];
+     styleLayers();
+ }
+}
+}
+
+}
+
 
 function styleLayers(){
 
@@ -2307,9 +2397,139 @@ if (commonPair) {
             }, 10);
         }
     }
+        // ---------------------------------------------------------------
+        // Analysis-requirement validation (frontend only). Counts landmarks,
+        // routes and junctions among the ALIGNED sketch features of every
+        // sketchmap, then gates each analysis checkbox against its rule.
+        //   - Landmark = aligned feature with otype === "Polygon"
+        //   - Route    = aligned feature with isRoute === "Yes"
+        //   - Junction = shared endpoint (rounded to 3 dp) of >= 3 aligned
+        //                sketch lines
+        // Stats are cached when the modal opens and refreshed at Run time.
+        // ---------------------------------------------------------------
+        var __analysisStats = null;
+
+        function __coordKey(pt) {
+            return pt[0].toFixed(3) + ',' + pt[1].toFixed(3);
+        }
+
+        function computeAnalysisStats() {
+            var result = {};
+            if (typeof AlignmentArray === 'undefined' || !AlignmentArray) return result;
+            var names = Object.keys(AlignmentArray);
+            for (var i = 0; i < names.length; i++) {
+                var smName = names[i];
+                var layer = (typeof allOriginalSketchMaps !== 'undefined') ? allOriginalSketchMaps[smName] : null;
+                if (!layer || typeof layer.eachLayer !== 'function') continue;
+                var landmarks = 0, routes = 0, alignedFeatures = 0;
+                var endpointCounts = {};
+                layer.eachLayer(function(slayer) {
+                    var p = slayer.feature && slayer.feature.properties;
+                    if (!p || !p.aligned) return;
+                    alignedFeatures++;
+                    if (p.otype === "Polygon") landmarks++;
+                    if (p.isRoute === "Yes") routes++;
+                    if (p.otype === "Line") {
+                        var gj = slayer.toGeoJSON();
+                        var coords = gj.geometry && gj.geometry.coordinates;
+                        if (coords && coords.length >= 2) {
+                            var a = __coordKey(coords[0]);
+                            var b = __coordKey(coords[coords.length - 1]);
+                            endpointCounts[a] = (endpointCounts[a] || 0) + 1;
+                            endpointCounts[b] = (endpointCounts[b] || 0) + 1;
+                        }
+                    }
+                });
+                var junctions = 0;
+                for (var k in endpointCounts) if (endpointCounts[k] >= 3) junctions++;
+                result[smName] = {
+                    landmarks: landmarks,
+                    routes: routes,
+                    junctions: junctions,
+                    alignedFeatures: alignedFeatures
+                };
+            }
+            return result;
+        }
+
+        var __checkboxRules = {
+            chkAccuracy: {
+                displayName: 'Qualitative Accuracy',
+                predicate: function(s) { return s.junctions >= 1 && s.routes >= 1 && s.landmarks >= 1; },
+                needText: 'needs an aligned junction, marked route, and aligned landmark',
+                detail: function(s) { return 'junctions=' + s.junctions + ', routes=' + s.routes + ', landmarks=' + s.landmarks; }
+            },
+            chkBuildingsGMDA: {
+                displayName: 'Buildings GMDA',
+                predicate: function(s) { return s.landmarks >= 2; },
+                needText: 'needs at least 2 aligned landmarks',
+                detail: function(s) { return 'landmarks=' + s.landmarks; }
+            },
+            chkJunctionsGMDA: {
+                displayName: 'Junctions GMDA',
+                predicate: function(s) { return s.junctions >= 2; },
+                needText: 'needs at least 2 aligned junctions',
+                detail: function(s) { return 'junctions=' + s.junctions; }
+            },
+            chkLandmarksBDR: {
+                displayName: 'Buildings BDR',
+                predicate: function(s) { return s.landmarks >= 1; },
+                needText: 'needs at least 1 aligned landmark',
+                detail: function(s) { return 'landmarks=' + s.landmarks; }
+            },
+            chkJunctionsBDR: {
+                displayName: 'Junctions BDR',
+                predicate: function(s) { return s.junctions >= 1; },
+                needText: 'needs at least 1 aligned junction',
+                detail: function(s) { return 'junctions=' + s.junctions; }
+            }
+        };
+
+        // For each rule: disable the checkbox iff NO sketchmap can satisfy it.
+        // If at least one sketchmap passes, leave it tickable — the "Continue
+        // anyway?" confirm on Run then covers the partial-fail case.
+        function refreshCheckboxAvailability() {
+            var stats = __analysisStats || {};
+            var names = Object.keys(stats);
+            Object.keys(__checkboxRules).forEach(function(id) {
+                var rule = __checkboxRules[id];
+                var chk = document.getElementById(id);
+                if (!chk) return;
+                var label = chk.closest ? chk.closest('.modal-option') : null;
+                var anyPass = false;
+                for (var i = 0; i < names.length; i++) {
+                    if (rule.predicate(stats[names[i]])) { anyPass = true; break; }
+                }
+                if (!anyPass) {
+                    chk.checked = false;
+                    chk.disabled = true;
+                    var reason = rule.displayName + ' ' + rule.needText +
+                        (names.length === 0
+                            ? '. Upload sketchmaps and align features to enable it.'
+                            : '. No sketchmap satisfies this — align more features to enable it.');
+                    if (label) {
+                        label.classList.add('rule-failed');
+                        label.setAttribute('title', reason);
+                    } else {
+                        chk.setAttribute('title', reason);
+                    }
+                } else {
+                    chk.disabled = false;
+                    if (label) {
+                        label.classList.remove('rule-failed');
+                        label.removeAttribute('title');
+                    } else {
+                        chk.removeAttribute('title');
+                    }
+                }
+            });
+        }
+
         function openAnalyseModal() {
-        document.getElementById('analyseModal').style.display = 'flex';
-    }
+            __analysisStats = computeAnalysisStats();
+            refreshCheckboxAvailability();
+            document.getElementById('analyseModal').style.display = 'flex';
+        }
 
     function closeAnalyseModal() {
         document.getElementById('analyseModal').style.display = 'none';
@@ -2325,7 +2545,54 @@ if (commonPair) {
         const landmarksBDR = document.getElementById('chkLandmarksBDR').checked;
         const junctionsBDR = document.getElementById('chkJunctionsBDR').checked;
 
+        // Fresh stats at run time in case alignments changed while the modal was open.
+        var stats = computeAnalysisStats();
 
+        // --- HARD BLOCK: any sketchmap with zero aligned features cannot run
+        // completeness or generalization. No "continue anyway" — tell the user
+        // to fix it first.
+        var noAlignment = [];
+        for (var name in stats) {
+            if (stats[name].alignedFeatures === 0) noAlignment.push(name);
+        }
+        if (noAlignment.length > 0) {
+            alert(
+                'Cannot run analysis. The following sketchmap(s) have no aligned features.\n' +
+                'Please align at least one feature in each before running:\n\n• ' +
+                noAlignment.join('\n• ')
+            );
+            return;
+        }
+
+        // --- SOFT BLOCK: any ticked optional analysis whose requirement fails.
+        // Offer "Continue anyway" — failing sketchmaps will error out.
+        var checkedRules = [
+            [accuracy,       'chkAccuracy'],
+            [buildingsGMDA,  'chkBuildingsGMDA'],
+            [junctionsGMDA,  'chkJunctionsGMDA'],
+            [landmarksBDR,   'chkLandmarksBDR'],
+            [junctionsBDR,   'chkJunctionsBDR']
+        ];
+        var softIssues = [];
+        for (var i = 0; i < checkedRules.length; i++) {
+            if (!checkedRules[i][0]) continue;
+            var rule = __checkboxRules[checkedRules[i][1]];
+            for (var nm in stats) {
+                var s = stats[nm];
+                if (!rule.predicate(s)) {
+                    softIssues.push('• ' + nm + ' — ' + rule.displayName + ' ' +
+                                    rule.needText + ' (' + rule.detail(s) + ')');
+                }
+            }
+        }
+        if (softIssues.length > 0) {
+            var proceed = window.confirm(
+                'Some sketchmaps do not meet the requirements for the selected analyses:\n\n' +
+                softIssues.join('\n') +
+                '\n\nContinue anyway? Failing sketchmaps will error out.'
+            );
+            if (!proceed) return;
+        }
 
 
         //NEW ONE: to show/hide the matching table columns based on selection
@@ -2336,10 +2603,10 @@ if (commonPair) {
         table.classList.toggle('hide-landmarks-bdr', !landmarksBDR);
         table.classList.toggle('hide-junctions-bdr', !junctionsBDR);
 
-        
+
         closeAnalyseModal();
 
-        // analyseMultiMap populates allGenBaseMap, which will then be used by GMDA calculators 
+        // analyseMultiMap populates allGenBaseMap, which will then be used by GMDA calculators
         // so, it must be finished first then the GMDA will run.
         await analyseMultiMap(completeness, accuracy);
 
