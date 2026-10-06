@@ -63,8 +63,11 @@ function renderGeoJsonFiles(file) {
         $.getJSON(reader.result, function (data) {
          var bidArray = Object.values(data.features).map((item) => item.properties.id);
          var RouteSeqOrderArray = Object.values(data.features).map((item) => item.properties.RouteSeqOrder);
-         routeOrder = Math.max.apply(Math,RouteSeqOrderArray);
-         bid = Math.max.apply(Math, bidArray);
+         // Math.max.apply(Math, []) returns -Infinity; guard against an
+         // empty base map so bid/routeOrder don't become -Infinity and
+         // propagate to feature ids on the next draw.
+         routeOrder = RouteSeqOrderArray.length > 0 ? Math.max.apply(Math, RouteSeqOrderArray) : 0;
+         bid = bidArray.length > 0 ? Math.max.apply(Math, bidArray) : 0;
 
 
            drawnItems = L.geoJSON(data);
@@ -588,10 +591,17 @@ function GenchangestyleOnHover(Array,BooleanGroup,GenBaseMap,sketchLayer){
 
 
 
-async function analyseMultiMap (comp,acc) {
+// qaGroups: optional array naming the QA groups the user ticked, e.g.
+//   ['buildings', 'streets', 'streetbuilding'].
+// It is forwarded to analyzeQualitative which POSTs it to the accuracy
+// service; the server skips any sub-measure whose group isn't listed.
+// If omitted or empty, the server treats it as "all groups selected" so
+// legacy callers keep working.
+async function analyseMultiMap (comp,acc,qaGroups) {
 if (BooleanEditSketchMode){
          saveSketchMap();
 }
+qaGroups = qaGroups || [];
     responseArray = {};
     genResultArray = {};
     qualresponseArray = {};
@@ -749,7 +759,7 @@ try {
 
 
     const qualitativePromise = acc
-      ? analyzeQualitative(fixedIndex, currentsketchMap, removeMissingFeatures(processeddata.sketchdata), removeMissingFeatures(processeddata.metricdata))
+      ? analyzeQualitative(fixedIndex, currentsketchMap, removeMissingFeatures(processeddata.sketchdata), removeMissingFeatures(processeddata.metricdata), qaGroups)
       : Promise.resolve({});
 
     const [completenessResponse, qualitativeResponse] = await Promise.all([
@@ -1109,7 +1119,7 @@ const projectionLayerSM = L.geoJSON(null, {
     weight: 8
   }
 });
-async function analyzeQualitative(index, currentsketchMap, processedSketch, processedMetric) {
+async function analyzeQualitative(index, currentsketchMap, processedSketch, processedMetric, qaGroups) {
     return new Promise((resolve, reject) => {
         // Use service URL builder function to build the base URL
         baseUrl = getServiceUrl('qualitativerelations');
@@ -1121,7 +1131,10 @@ async function analyzeQualitative(index, currentsketchMap, processedSketch, proc
                 sketchFileName: currentsketchMap,
                 metricFileName: "basemapFor" + currentsketchMap,
                 sketchdata: JSON.stringify(processedSketch),
-                metricdata: JSON.stringify(processedMetric)
+                metricdata: JSON.stringify(processedMetric),
+                // Comma-separated list of selected QA groups (see analyseMultiMap).
+                // Empty string -> server defaults to running every group.
+                qa_groups: (qaGroups || []).join(',')
             },
             success: function(response) {
                 const linearOrderingEntry = response.mmqcn.constraint_collection.find(c => c.relation_set === "linearOrdering");
@@ -1291,6 +1304,61 @@ for (var i in Object.keys(responseArray)){
 
 //QUALITATIVE ACCURACY
 
+// Each relation_set belongs to one of three domain groups. The per-sketchmap
+// relations file is rewritten so these show up under a group header.
+var __qaGroups = [
+    ["Buildings-only",   ["rcc11"]],
+    ["Streets-only",     ["streetTopology", "opra"]],
+    ["Street-building",  ["de9im", "leftRight", "linearOrdering"]]
+];
+
+function __writeGroupedRelations(csvArr, collection, lookups) {
+    // Index the collection by its relation_set key.
+    var byName = {};
+    for (var x in collection) {
+        var cc = collection[x];
+        if (cc && cc.relation_set) byName[cc.relation_set] = cc;
+    }
+    __qaGroups.forEach(function(group) {
+        var groupLabel = group[0];
+        var relSets = group[1];
+        var hits = relSets.filter(function(rs){ return byName[rs]; });
+        if (hits.length === 0) return;
+        csvArr.push("== " + groupLabel + " ==, , ");
+        hits.forEach(function(rs) {
+            var cc = byName[rs];
+            csvArr.push(" " + "," + cc.relation_set + "," + " ");
+            for (var y in cc.constraints) {
+                var c = cc.constraints[y];
+                csvArr.push(
+                    resolveGenId(c["obj 1"], lookups) + "," +
+                    resolveGenId(c["obj 2"], lookups) + "," +
+                    c["relation"]
+                );
+            }
+        });
+    });
+    // Append anything whose relation_set wasn't in __qaGroups (defensive).
+    var listed = {};
+    __qaGroups.forEach(function(g){ g[1].forEach(function(n){ listed[n] = 1; }); });
+    var unlisted = Object.keys(byName).filter(function(n){ return !listed[n]; });
+    if (unlisted.length > 0) {
+        csvArr.push("== Other ==, , ");
+        unlisted.forEach(function(rs) {
+            var cc = byName[rs];
+            csvArr.push(" " + "," + cc.relation_set + "," + " ");
+            for (var y in cc.constraints) {
+                var c = cc.constraints[y];
+                csvArr.push(
+                    resolveGenId(c["obj 1"], lookups) + "," +
+                    resolveGenId(c["obj 2"], lookups) + "," +
+                    c["relation"]
+                );
+            }
+        });
+    }
+}
+
 if (Object.keys(qualresponseArray)!=0){
      for (var i = 0; i < numbOfSM - 3; i++){
     QualRelationsBaseMapCSV[i]   = ["Object 1 , Object 2, Relations"];
@@ -1300,44 +1368,53 @@ if (Object.keys(qualresponseArray)!=0){
     const lookups   = buildGenIdLookups(TemporaryAlignmentArray[sketchmap]);
 
     if (qualRelationsBaseMap[i]){
-        for (var x in qualRelationsBaseMap[i].constraint_collection){
-            QualRelationsBaseMapCSV[i].push(" " + ',' + qualRelationsBaseMap[i].constraint_collection[x].relation_set + ',' + " ");
-            for (var y in qualRelationsBaseMap[i].constraint_collection[x].constraints){
-                const c = qualRelationsBaseMap[i].constraint_collection[x].constraints[y];
-                QualRelationsBaseMapCSV[i].push(
-                    resolveGenId(c["obj 1"], lookups) + ',' +
-                    resolveGenId(c["obj 2"], lookups) + ',' +
-                    c["relation"]
-                );
-            }
-        }
-
-        for (var x in qualRelationsSketchMap[i].constraint_collection){
-            QualRelationsSketchMapCSV[i].push(" " + ',' + qualRelationsSketchMap[i].constraint_collection[x].relation_set + ',' + " ");
-            for (var y in qualRelationsSketchMap[i].constraint_collection[x].constraints){
-                const c = qualRelationsSketchMap[i].constraint_collection[x].constraints[y];
-                QualRelationsSketchMapCSV[i].push(
-                    resolveGenId(c["obj 1"], lookups) + ',' +
-                    resolveGenId(c["obj 2"], lookups) + ',' +
-                    c["relation"]
-                );
-            }
-        }
+        __writeGroupedRelations(QualRelationsBaseMapCSV[i],   qualRelationsBaseMap[i].constraint_collection,   lookups);
+        __writeGroupedRelations(QualRelationsSketchMapCSV[i], qualRelationsSketchMap[i].constraint_collection, lookups);
     }
 }
 
 
+// Build one summary block per sketchmap, grouped into three sections:
+//   Buildings-only  -> RCC11
+//   Streets-only    -> Street Topology + OPRA
+//   Street-building -> DE9IM + Left/Right + Linear Ordering
+// A measure that was skipped on the server comes back as null for its
+// numeric fields; render it as a blank cell with a trailing " (skipped)".
+function __qaCell(v) {
+    return (v === null || v === undefined) ? "" : v;
+}
+function __qaRow(label, resp, keys) {
+    var vals = keys.map(function(k){ return __qaCell(resp[k]); });
+    var isSkipped = keys.every(function(k){ return resp[k] === null || resp[k] === undefined; });
+    var suffix = isSkipped ? " (skipped)" : "";
+    return label + suffix + "," + vals.join(",");
+}
+
 for (var i in Object.keys(qualresponseArray)){
         var sketchmap = Object.keys(qualresponseArray)[i];
+        var r = qualresponseArray[sketchmap];
         QASummaryCSV.push(sketchmap);
         QASummaryCSV.push("Correctness");
         QASummaryCSV.push("Qualitative Spatial Aspects , Relations in Base map , Relations in Sketch Map , Correct Relations, Wrong Relations, Missing Relations, Accuracy Rate (%)");
-        QASummaryCSV.push("Topological Relations between Landmarks and Regions" + "," + qualresponseArray[sketchmap].totalRCC11Relations_mm + "," + qualresponseArray[sketchmap].totalRCC11Relations + ',' + qualresponseArray[sketchmap].correctRCC11Relations + ',' + qualresponseArray[sketchmap].wrongMatchedRCC11rels + ',' + qualresponseArray[sketchmap].missingRCC11rels + ',' + qualresponseArray[sketchmap].correctnessAccuracy_rcc11 );
-        QASummaryCSV.push("Linear Ordering of Landmarks along Street Segments" + "," + qualresponseArray[sketchmap].total_lO_rels_mm + "," + qualresponseArray[sketchmap].total_LO_rels_sm + ',' + qualresponseArray[sketchmap].matched_LO_rels + ',' + qualresponseArray[sketchmap].wrong_matched_LO_rels + ',' + qualresponseArray[sketchmap].missing_LO_rels + ',' + qualresponseArray[sketchmap].correctnessAccuracy_LO);
-        QASummaryCSV.push("Left-Right Relations of Landmarks wrt. Street-segments" + "," + qualresponseArray[sketchmap].total_LR_rels_mm + "," + qualresponseArray[sketchmap].total_LR_rels_sm + ',' + qualresponseArray[sketchmap].matched_LR_rels + ',' + qualresponseArray[sketchmap].wrong_matched_LR_rels + ',' + qualresponseArray[sketchmap].missing_LR_rels + ',' + qualresponseArray[sketchmap].correctnessAccuracy_LR);
-        QASummaryCSV.push("Topological Relations between street-segments and regions/landmarks" + "," + qualresponseArray[sketchmap].total_DE9IM_rels_mm + ',' + qualresponseArray[sketchmap].total_DE9IM_rels_sm + ',' + qualresponseArray[sketchmap].matched_DE9IM_rels + ',' + qualresponseArray[sketchmap].wrong_matched_DE9IM_rels + ',' + qualresponseArray[sketchmap].missing_DE9IM_rels + ',' + qualresponseArray[sketchmap].correctnessAccuracy_DE9IM );
-        QASummaryCSV.push("Connectivity of street segments" + "," + qualresponseArray[sketchmap].total_streetTop_rels_mm + "," + qualresponseArray[sketchmap].total_streetTop_rels_sm + "," + qualresponseArray[sketchmap].matched_streetTop_rels + "," + qualresponseArray[sketchmap].wrong_matched_streetTop_rels + "," + qualresponseArray[sketchmap].missing_streetTop_rels + "," + qualresponseArray[sketchmap].correctnessAccuracy_streetTop);
-        QASummaryCSV.push("Relative Orientation of Connected Street-segments" + "," + qualresponseArray[sketchmap].total_opra_rels_mm + "," + qualresponseArray[sketchmap].total_opra_rels_sm+ "," + qualresponseArray[sketchmap].matched_opra_rels + "," + qualresponseArray[sketchmap].wrong_matched_opra_rels + "," + qualresponseArray[sketchmap].missing_opra_rels + "," + qualresponseArray[sketchmap].correctnessAccuracy_opra);
+
+        QASummaryCSV.push("-- Buildings-only --");
+        QASummaryCSV.push(__qaRow("Topological Relations between Landmarks and Regions", r,
+            ["totalRCC11Relations_mm","totalRCC11Relations","correctRCC11Relations","wrongMatchedRCC11rels","missingRCC11rels","correctnessAccuracy_rcc11"]));
+
+        QASummaryCSV.push("-- Streets-only --");
+        QASummaryCSV.push(__qaRow("Connectivity of street segments", r,
+            ["total_streetTop_rels_mm","total_streetTop_rels_sm","matched_streetTop_rels","wrong_matched_streetTop_rels","missing_streetTop_rels","correctnessAccuracy_streetTop"]));
+        QASummaryCSV.push(__qaRow("Relative Orientation of Connected Street-segments", r,
+            ["total_opra_rels_mm","total_opra_rels_sm","matched_opra_rels","wrong_matched_opra_rels","missing_opra_rels","correctnessAccuracy_opra"]));
+
+        QASummaryCSV.push("-- Street-building --");
+        QASummaryCSV.push(__qaRow("Topological Relations between street-segments and regions/landmarks", r,
+            ["total_DE9IM_rels_mm","total_DE9IM_rels_sm","matched_DE9IM_rels","wrong_matched_DE9IM_rels","missing_DE9IM_rels","correctnessAccuracy_DE9IM"]));
+        QASummaryCSV.push(__qaRow("Linear Ordering of Landmarks along Street Segments", r,
+            ["total_lO_rels_mm","total_LO_rels_sm","matched_LO_rels","wrong_matched_LO_rels","missing_LO_rels","correctnessAccuracy_LO"]));
+        QASummaryCSV.push(__qaRow("Left-Right Relations of Landmarks wrt. Street-segments", r,
+            ["total_LR_rels_mm","total_LR_rels_sm","matched_LR_rels","wrong_matched_LR_rels","missing_LR_rels","correctnessAccuracy_LR"]));
+
         QASummaryCSV.push("    ");
 }
 

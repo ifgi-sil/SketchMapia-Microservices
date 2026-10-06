@@ -99,7 +99,10 @@ def get_de9im_constraints (qcns):
     try:
         for item in qcns:
             for de9im_const in item['constraints']:
-                if item['relation_set']=="DE9IM":
+                # qualify_DE9IM_linepolygon emits the relation_set as
+                # "DE9IM : line_polygon"; use a prefix match so the counter
+                # actually picks up those constraints.
+                if item['relation_set'].startswith("DE9IM"):
                     if de9im_const['relation'] !="nonAdjacent":
                         #print("lr constraints...",de9im_const)
                         de9imConstraints.append(de9im_const)

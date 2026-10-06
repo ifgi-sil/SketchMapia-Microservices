@@ -402,6 +402,46 @@ border-bottom-right-radius: 3px;
     cursor: not-allowed;
 }
 
+/* Small circled 'i' that appears beside a disabled analysis checkbox
+   when it carries the .rule-failed state. Hidden otherwise. The label's
+   existing title attribute still supplies the tooltip text. */
+.modal-option .info-i {
+    display: none;
+}
+.modal-option.rule-failed .info-i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+    background: #dc3545;
+    border: none;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 10px;
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1;
+    font-family: serif;
+    cursor: help;
+    vertical-align: middle;
+}
+
+/* Small italic note shown under a modal checkbox label. The JS toggles
+   .has-note on the containing .modal-option to make it visible. */
+.modal-option .group-note {
+    display: none;
+    margin: 2px 0 0 24px;
+    font-size: 11px;
+    color: #cfcfcf;
+    font-style: italic;
+    line-height: 1.3;
+}
+.modal-option.has-note .group-note {
+    display: block;
+}
+
 .before, .after{
     font-size: small;
     color: white;

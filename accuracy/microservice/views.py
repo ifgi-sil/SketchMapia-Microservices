@@ -112,151 +112,196 @@ def analyzeQualitative(request):
     data_format = "geojson"
 
 
-    sketchMapQCN_S =  qualify_map.main_loader(sketchFileName, SMGeoJsonData, data_format, "sketch_map")
-    metricMapQCN_S =  qualify_map.main_loader(metricFileName,MMGeoJsonData,data_format,"metric_map")
+    # ------------------------------------------------------------------
+    # qa_groups is a comma-separated list from the Analyse modal naming
+    # which domain groups to run. Supported values:
+    #   buildings       -> RCC11
+    #   streets         -> StreetTopology, OPRA
+    #   streetbuilding  -> DE9IM, LeftRight, LinearOrdering
+    # Missing / empty = run everything (keeps older callers working).
+    # ------------------------------------------------------------------
+    qa_groups_raw = (request.POST.get('qa_groups') or '').strip()
+    if qa_groups_raw:
+        selected_groups = {g.strip() for g in qa_groups_raw.split(',') if g.strip()}
+    else:
+        selected_groups = {"buildings", "streets", "streetbuilding"}
+
+    # Only the qualifier functions whose group is in ``selected_groups``
+    # are run inside main_loader, so unselected groups skip the pairwise
+    # relation computation entirely (not just the counting below).
+    sketchMapQCN_S =  qualify_map.main_loader(sketchFileName, SMGeoJsonData, data_format, "sketch_map", groups=selected_groups)
+    metricMapQCN_S =  qualify_map.main_loader(metricFileName,MMGeoJsonData,data_format,"metric_map",   groups=selected_groups)
     sketchMapQCNs = copy.deepcopy(sketchMapQCN_S)
     metricMapQCNs = copy.deepcopy(metricMapQCN_S)
 
+    # ------------------------------------------------------------------
+    # Each sub-measure is wrapped in a helper that:
+    #   - skips with reason "not selected" if its group isn't in qa_groups
+    #   - catches any runtime exception (e.g. no route in dataset) and
+    #     marks the sub-measure skipped with that reason.
+    # Precision / recall are computed only over sub-measures that ran.
+    # ------------------------------------------------------------------
 
-
-
-    # Read and parse the METRIC MAP JSON file
-
-
-
-    """
-        Measure the correct relations using RCC11
-    """
-    totalRCC11Relations_mm = qualitativeAnalyser.getTotalRelations_rcc8_mm(metricMapQCNs)
-    totalRCC11Relations = qualitativeAnalyser.getTotalRelations_rcc8_sm(sketchMapQCNs)
-    correctRCC11Relations = qualitativeAnalyser.getCorrectRelation_rcc8(sketchMapQCNs, metricMapQCNs)
-    wrongMatchedRCC11rels = qualitativeAnalyser.getWrongRelations_rcc8(sketchMapQCNs, metricMapQCNs)
-    missingRCC11rels = totalRCC11Relations_mm - (correctRCC11Relations + wrongMatchedRCC11rels)
-    if correctRCC11Relations != 0 or totalRCC11Relations != 0:
-        correctnessAccuracy_rcc11 = (correctRCC11Relations / totalRCC11Relations) * 100
-    else:
-        correctnessAccuracy_rcc11 = 0.00
-
-
-    """
-            Measure the correct relations using Linear Ordering 
-            alogn the defined route 
-        """
-    total_lO_rels_mm = qualitativeAnalyser.getTotalLinearOrderingReltions_mm(metricMapQCNs)
-    total_LO_rels_sm = qualitativeAnalyser.getTotalLinearOrderingReltions_sm(sketchMapQCNs)
-    matched_LO_rels = qualitativeAnalyser.getCorrectRelation_linearOrdering(sketchMapQCNs, metricMapQCNs)
-    wrong_matched_LO_rels = qualitativeAnalyser.getWrongRelations_linearOrdering(sketchMapQCNs, metricMapQCNs)
-    missing_LO_rels = total_lO_rels_mm - (matched_LO_rels + wrong_matched_LO_rels)
-    if matched_LO_rels != 0 or total_LO_rels_sm != 0:
-        correctnessAccuracy_LO = (matched_LO_rels / total_LO_rels_sm) * 100
-    else:
-        correctnessAccuracy_LO = 0.00
-
-    """
-        Measure the correct relations using LeftRight
-        alogn the defined route 
-    """
-
-    total_LR_rels_mm = qualitativeAnalyser.getTotalLeftRightRelations_mm(metricMapQCNs)
-    total_LR_rels_sm = qualitativeAnalyser.getTotalLeftRightRelations_sm(sketchMapQCNs)
-    matched_LR_rels = qualitativeAnalyser.getCorrectrelations_leftRight(sketchMapQCNs, metricMapQCNs)
-    wrong_matched_LR_rels = qualitativeAnalyser.getWrongCorrectrelations_leftRight(sketchMapQCNs, metricMapQCNs)
-    missing_LR_rels = total_LR_rels_mm - (matched_LR_rels + wrong_matched_LR_rels)
-    if matched_LR_rels != 0 or total_LR_rels_sm != 0:
-        correctnessAccuracy_LR = (matched_LR_rels / total_LR_rels_sm) * 100
-    else:
-        correctnessAccuracy_LR = 0.00
-
-    """
-        Measure the correct relations using Topologocal Relations between streets and regions 
-
-    """
-    total_DE9IM_rels_mm = qualitativeAnalyser.getTotalDE9IMRelations_mm(metricMapQCNs)
-    total_DE9IM_rels_sm = qualitativeAnalyser.getTotalDE9IMRelations_sm(sketchMapQCNs)
-    matched_DE9IM_rels = qualitativeAnalyser.getCorrectrelations_DE9IM(sketchMapQCNs, metricMapQCNs)
-    wrong_matched_DE9IM_rels = qualitativeAnalyser.getWrongCorrectrelations_DE9IM(sketchMapQCNs, metricMapQCNs)
-    missing_DE9IM_rels = total_DE9IM_rels_mm - (matched_DE9IM_rels + wrong_matched_DE9IM_rels)
-    if matched_DE9IM_rels != 0 or total_DE9IM_rels_sm != 0:
-        correctnessAccuracy_DE9IM = (matched_DE9IM_rels / total_DE9IM_rels_sm) * 100
-    else:
-        correctnessAccuracy_DE9IM = 0.00
-
-
-    """
-        Measure the correct relations using Topologocal Relations between streets  
-    """
-    total_streetTop_rels_mm = qualitativeAnalyser.getTotalStreetTopology_mm(metricMapQCNs)
-    total_streetTop_rels_sm = qualitativeAnalyser.getTotalStreetTopology_sm(sketchMapQCNs)
-    matched_streetTop_rels = qualitativeAnalyser.getCorrectrelations_streetTopology(sketchMapQCNs, metricMapQCNs)
-    wrong_matched_streetTop_rels = qualitativeAnalyser.getWrongCorrectrelations_streetTopology(sketchMapQCNs,
-                                                                                                metricMapQCNs)
-    missing_streetTop_rels = total_streetTop_rels_mm - (matched_streetTop_rels + wrong_matched_streetTop_rels)
-    if matched_streetTop_rels != 0 or total_streetTop_rels_sm != 0:
-        correctnessAccuracy_streetTop = (matched_streetTop_rels / total_streetTop_rels_sm) * 100
-    else:
-        correctnessAccuracy_streetTop = 0.00
-    """
-            Measure the correct relations using Orientation Relations between streets  
-        """
-    total_opra_rels_mm = qualitativeAnalyser.getTotalOPRA_mm(metricMapQCNs)
-    total_opra_rels_sm = qualitativeAnalyser.getTotalOPRA_sm(sketchMapQCNs)
-    matched_opra_rels = qualitativeAnalyser.getCorrectrelations_opra(sketchMapQCNs, metricMapQCNs)
-    wrong_matched_opra_rels = qualitativeAnalyser.getWrongCorrectrelations_opra(sketchMapQCNs, metricMapQCNs)
-    missing_opra_rels = total_opra_rels_mm - (matched_opra_rels + wrong_matched_opra_rels)
-    if matched_opra_rels != 0 or total_opra_rels_sm != 0:
-        correctnessAccuracy_opra = (matched_opra_rels / total_opra_rels_sm) * 100
-    else:
-        correctnessAccuracy_opra = 0.00
-
-    """
-            Calculate Recision and Recall 
-        """
-    total_no_correct_rels = correctRCC11Relations + matched_LO_rels + matched_LR_rels + matched_DE9IM_rels + matched_streetTop_rels + matched_opra_rels
-    total_no_rels_sm = totalRCC11Relations + total_LO_rels_sm + total_LR_rels_sm + total_DE9IM_rels_sm + total_streetTop_rels_sm + total_opra_rels_sm
-    total_on_rels_MM = totalRCC11Relations_mm + total_lO_rels_mm + total_LR_rels_mm + total_DE9IM_rels_mm + total_streetTop_rels_mm + total_opra_rels_mm
-    precision = total_no_correct_rels / total_no_rels_sm
-    recall = total_no_correct_rels / total_on_rels_MM
-
-    #f_score = 2 * ((precision * recall) / (precision + recall))
-
-    print(sketchFileName,"precision....:", precision)
-    print(sketchFileName,"recall....:", recall)
-
-    qualitative_results = {
-        "sketchMapID": sketchFileName,
-        "totalRCC11Relations_mm": totalRCC11Relations_mm,
-        "totalRCC11Relations": totalRCC11Relations,
-        "correctRCC11Relations": correctRCC11Relations,
-        "wrongMatchedRCC11rels": wrongMatchedRCC11rels,
-        "missingRCC11rels": missingRCC11rels,
-        "correctnessAccuracy_rcc11": round(correctnessAccuracy_rcc11, 2),
-        "total_lO_rels_mm": total_lO_rels_mm, "total_LO_rels_sm": total_LO_rels_sm,
-        "matched_LO_rels": matched_LO_rels, "wrong_matched_LO_rels": wrong_matched_LO_rels,
-        "missing_LO_rels": missing_LO_rels,
-        "correctnessAccuracy_LO": round(correctnessAccuracy_LO, 2),
-        "total_LR_rels_mm": total_LR_rels_mm,
-        "total_LR_rels_sm": total_LR_rels_sm, "matched_LR_rels": matched_LR_rels,
-        "wrong_matched_LR_rels": wrong_matched_LR_rels, "missing_LR_rels": missing_LR_rels,
-        "correctnessAccuracy_LR": round(correctnessAccuracy_LR, 2),
-        "total_DE9IM_rels_mm": total_DE9IM_rels_mm, "total_DE9IM_rels_sm": total_DE9IM_rels_sm,
-        "matched_DE9IM_rels": matched_DE9IM_rels,
-        "wrong_matched_DE9IM_rels": wrong_matched_DE9IM_rels,
-        "missing_DE9IM_rels": missing_DE9IM_rels,
-        "correctnessAccuracy_DE9IM": round(correctnessAccuracy_DE9IM, 2),
-        "total_streetTop_rels_mm": total_streetTop_rels_mm,
-        "total_streetTop_rels_sm": total_streetTop_rels_sm,
-        "matched_streetTop_rels": matched_streetTop_rels,
-        "wrong_matched_streetTop_rels": wrong_matched_streetTop_rels,
-        "missing_streetTop_rels": missing_streetTop_rels,
-        "correctnessAccuracy_streetTop": round(correctnessAccuracy_streetTop, 2),
-        "total_opra_rels_mm": total_opra_rels_mm, "total_opra_rels_sm": total_opra_rels_sm,
-        "matched_opra_rels": matched_opra_rels, "wrong_matched_opra_rels": wrong_matched_opra_rels,
-        "missing_opra_rels": missing_opra_rels,
-        "correctnessAccuracy_opra": round(correctnessAccuracy_opra, 2),
-        "precision": round(precision, 2),
-        "recall": round(recall, 2),
-        "f_score": "nil"
+    MEASURE_GROUP = {
+        "rcc11":          "buildings",
+        "streetTopology": "streets",
+        "opra":           "streets",
+        "de9im":          "streetbuilding",
+        "leftRight":      "streetbuilding",
+        "linearOrdering": "streetbuilding",
     }
+
+    skipped = {}
+
+    def _run_measure(name, fn):
+        """Run a sub-measure. Skip if its group was not selected, or on exception."""
+        group = MEASURE_GROUP.get(name)
+        if group not in selected_groups:
+            skipped[name] = "not selected"
+            return None
+        try:
+            return fn()
+        except Exception as exc:
+            skipped[name] = str(exc) or exc.__class__.__name__
+            print(sketchFileName, "SKIPPED", name, "->", skipped[name])
+            return None
+
+    # --- RCC11 (buildings-only) ---
+    def _rcc11():
+        tmm = qualitativeAnalyser.getTotalRelations_rcc8_mm(metricMapQCNs)
+        tsm = qualitativeAnalyser.getTotalRelations_rcc8_sm(sketchMapQCNs)
+        correct = qualitativeAnalyser.getCorrectRelation_rcc8(sketchMapQCNs, metricMapQCNs)
+        wrong = qualitativeAnalyser.getWrongRelations_rcc8(sketchMapQCNs, metricMapQCNs)
+        if tsm == 0 and tmm == 0:
+            raise RuntimeError("no polygon features for RCC11")
+        acc = (correct / tsm) * 100 if tsm else 0.00
+        return (tmm, tsm, correct, wrong, tmm - (correct + wrong), acc)
+    rcc = _run_measure("rcc11", _rcc11)
+
+    # --- Linear Ordering (route + buildings) ---
+    def _lo():
+        tmm = qualitativeAnalyser.getTotalLinearOrderingReltions_mm(metricMapQCNs)
+        tsm = qualitativeAnalyser.getTotalLinearOrderingReltions_sm(sketchMapQCNs)
+        matched = qualitativeAnalyser.getCorrectRelation_linearOrdering(sketchMapQCNs, metricMapQCNs)
+        wrong = qualitativeAnalyser.getWrongRelations_linearOrdering(sketchMapQCNs, metricMapQCNs)
+        if tsm == 0 and tmm == 0:
+            raise RuntimeError("no linear-ordering relations (route or polygons missing)")
+        acc = (matched / tsm) * 100 if tsm else 0.00
+        return (tmm, tsm, matched, wrong, tmm - (matched + wrong), acc)
+    lo = _run_measure("linearOrdering", _lo)
+
+    # --- Left/Right (route + buildings) ---
+    def _lr():
+        tmm = qualitativeAnalyser.getTotalLeftRightRelations_mm(metricMapQCNs)
+        tsm = qualitativeAnalyser.getTotalLeftRightRelations_sm(sketchMapQCNs)
+        matched = qualitativeAnalyser.getCorrectrelations_leftRight(sketchMapQCNs, metricMapQCNs)
+        wrong = qualitativeAnalyser.getWrongCorrectrelations_leftRight(sketchMapQCNs, metricMapQCNs)
+        if tsm == 0 and tmm == 0:
+            raise RuntimeError("no left-right relations (route or polygons missing)")
+        acc = (matched / tsm) * 100 if tsm else 0.00
+        return (tmm, tsm, matched, wrong, tmm - (matched + wrong), acc)
+    lr = _run_measure("leftRight", _lr)
+
+    # --- DE9IM (line x polygon) ---
+    def _de9im():
+        tmm = qualitativeAnalyser.getTotalDE9IMRelations_mm(metricMapQCNs)
+        tsm = qualitativeAnalyser.getTotalDE9IMRelations_sm(sketchMapQCNs)
+        matched = qualitativeAnalyser.getCorrectrelations_DE9IM(sketchMapQCNs, metricMapQCNs)
+        wrong = qualitativeAnalyser.getWrongCorrectrelations_DE9IM(sketchMapQCNs, metricMapQCNs)
+        if tsm == 0 and tmm == 0:
+            raise RuntimeError("no street-building relations (need ≥1 line and ≥1 polygon)")
+        acc = (matched / tsm) * 100 if tsm else 0.00
+        return (tmm, tsm, matched, wrong, tmm - (matched + wrong), acc)
+    de9im = _run_measure("de9im", _de9im)
+
+    # --- Street Topology (streets-only) ---
+    def _stop():
+        tmm = qualitativeAnalyser.getTotalStreetTopology_mm(metricMapQCNs)
+        tsm = qualitativeAnalyser.getTotalStreetTopology_sm(sketchMapQCNs)
+        matched = qualitativeAnalyser.getCorrectrelations_streetTopology(sketchMapQCNs, metricMapQCNs)
+        wrong = qualitativeAnalyser.getWrongCorrectrelations_streetTopology(sketchMapQCNs, metricMapQCNs)
+        if tsm == 0 and tmm == 0:
+            raise RuntimeError("no street-topology relations (need ≥2 lines)")
+        acc = (matched / tsm) * 100 if tsm else 0.00
+        return (tmm, tsm, matched, wrong, tmm - (matched + wrong), acc)
+    stop = _run_measure("streetTopology", _stop)
+
+    # --- OPRA (streets-only, at junctions) ---
+    def _opra():
+        tmm = qualitativeAnalyser.getTotalOPRA_mm(metricMapQCNs)
+        tsm = qualitativeAnalyser.getTotalOPRA_sm(sketchMapQCNs)
+        matched = qualitativeAnalyser.getCorrectrelations_opra(sketchMapQCNs, metricMapQCNs)
+        wrong = qualitativeAnalyser.getWrongCorrectrelations_opra(sketchMapQCNs, metricMapQCNs)
+        if tsm == 0 and tmm == 0:
+            raise RuntimeError("no OPRA relations (need ≥2 connected lines)")
+        acc = (matched / tsm) * 100 if tsm else 0.00
+        return (tmm, tsm, matched, wrong, tmm - (matched + wrong), acc)
+    opra = _run_measure("opra", _opra)
+
+    # ------------------------------------------------------------------
+    # Precision / recall are pooled across only the sub-measures that ran.
+    # ------------------------------------------------------------------
+    ran = [m for m in (rcc, lo, lr, de9im, stop, opra) if m is not None]
+    sum_mm      = sum(m[0] for m in ran)
+    sum_sm      = sum(m[1] for m in ran)
+    sum_matched = sum(m[2] for m in ran)
+    precision = (sum_matched / sum_sm) if sum_sm else 0.0
+    recall    = (sum_matched / sum_mm) if sum_mm else 0.0
+
+    print(sketchFileName, "precision....:", precision, "recall....:", recall,
+          "skipped:", list(skipped.keys()))
+
+    # Expand each measure's tuple into the flat key names the frontend reads.
+    # When a measure was skipped the fields are set to None so the UI can show
+    # "—" and the CSV writers can emit blank cells.
+    def _unpack(m, keys):
+        if m is None:
+            return {k: None for k in keys}
+        tmm, tsm, matched, wrong, missing, acc = m
+        return dict(zip(keys, [tmm, tsm, matched, wrong, missing, round(acc, 2)]))
+
+    rcc_fields = _unpack(rcc, [
+        "totalRCC11Relations_mm", "totalRCC11Relations",
+        "correctRCC11Relations", "wrongMatchedRCC11rels",
+        "missingRCC11rels", "correctnessAccuracy_rcc11"
+    ])
+    lo_fields = _unpack(lo, [
+        "total_lO_rels_mm", "total_LO_rels_sm",
+        "matched_LO_rels", "wrong_matched_LO_rels",
+        "missing_LO_rels", "correctnessAccuracy_LO"
+    ])
+    lr_fields = _unpack(lr, [
+        "total_LR_rels_mm", "total_LR_rels_sm",
+        "matched_LR_rels", "wrong_matched_LR_rels",
+        "missing_LR_rels", "correctnessAccuracy_LR"
+    ])
+    de9im_fields = _unpack(de9im, [
+        "total_DE9IM_rels_mm", "total_DE9IM_rels_sm",
+        "matched_DE9IM_rels", "wrong_matched_DE9IM_rels",
+        "missing_DE9IM_rels", "correctnessAccuracy_DE9IM"
+    ])
+    stop_fields = _unpack(stop, [
+        "total_streetTop_rels_mm", "total_streetTop_rels_sm",
+        "matched_streetTop_rels", "wrong_matched_streetTop_rels",
+        "missing_streetTop_rels", "correctnessAccuracy_streetTop"
+    ])
+    opra_fields = _unpack(opra, [
+        "total_opra_rels_mm", "total_opra_rels_sm",
+        "matched_opra_rels", "wrong_matched_opra_rels",
+        "missing_opra_rels", "correctnessAccuracy_opra"
+    ])
+
+    qualitative_results = {"sketchMapID": sketchFileName}
+    qualitative_results.update(rcc_fields)
+    qualitative_results.update(lo_fields)
+    qualitative_results.update(lr_fields)
+    qualitative_results.update(de9im_fields)
+    qualitative_results.update(stop_fields)
+    qualitative_results.update(opra_fields)
+    qualitative_results["precision"] = round(precision, 2)
+    qualitative_results["recall"] = round(recall, 2)
+    qualitative_results["f_score"] = "nil"
+    qualitative_results["skipped"] = skipped
     # breakpoint()
     response_data = {
         "qualitative_results": qualitative_results,

@@ -81,7 +81,11 @@ def qualify_linear_ordering(data):
 
 
     if defined_route is None:
-        raise ValueError("No route defined in dataset.")
+        # No route marked -> return an empty relation set rather than
+        # raising, so the rest of the qualitative pipeline keeps running.
+        # analyzeQualitative in views.py then flags LO as skipped on the
+        # measurement side (empty totals).
+        return relation_set, arity, {}, []
 
     # --------------------------------------
     # Step 2: Separate polygons and route

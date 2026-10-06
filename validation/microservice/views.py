@@ -639,19 +639,21 @@ def validate(request):
             elif gtype in ("Point", "MultiPoint"):
                 point_features.append(f)
 
-        # Convert lines to GeoDataFrame
-        line_gdf = gpd.GeoDataFrame.from_features(line_features)
-
-
-
-        # --- Snap and merge Lines ---
-        snapped_lines, snapped_ids = snap_line_endpoints(line_gdf)
-        grouped_snaps = find_snapped_groups(line_gdf, snapped_lines)
-        merged_lines_json, id_mapping,merged_audit = merge_simple_intersections(snapped_lines)
-
-
-
-        snap_id_pairs = [sorted(list(g)) for g in grouped_snaps]
+        # Convert lines to GeoDataFrame. When the user has drawn no streets
+        # at all (polygons / landmarks only), skip the snap / merge pipeline
+        # entirely -- it needs an 'id' column on the frame and would crash
+        # on an empty FeatureCollection otherwise.
+        if line_features:
+            line_gdf = gpd.GeoDataFrame.from_features(line_features)
+            snapped_lines, snapped_ids = snap_line_endpoints(line_gdf)
+            grouped_snaps = find_snapped_groups(line_gdf, snapped_lines)
+            merged_lines_json, id_mapping, merged_audit = merge_simple_intersections(snapped_lines)
+            snap_id_pairs = [sorted(list(g)) for g in grouped_snaps]
+        else:
+            line_gdf = None
+            id_mapping = {}
+            merged_audit = []
+            snap_id_pairs = []
 
         audit = {
             "snap": snap_id_pairs,
@@ -671,16 +673,16 @@ def validate(request):
             approved_snap_json = json.loads(approved_snap_pairs) if approved_snap_pairs else []
             approved_merge_json = json.loads(approved_merge_pairs) if approved_merge_pairs else []
 
-            snapped_lines = apply_approved_snaps(line_gdf, approved_snap_json, id_col="id", inplace=False)
-
-            approved_merge_json = approved_merge_json or []
-            merge_groups = [m["merged_from"] for m in approved_merge_json]
-            merged_lines = apply_approved_merges(snapped_lines, merge_groups, id_col="id", inplace=False)
-
-            routecorrected = validateRoute(merged_lines, route_ids, id_col="id", inplace=False)
-
-            edited_lines_geojson = json.loads(routecorrected.to_json())
-            edited_line_features = edited_lines_geojson["features"]
+            if line_gdf is not None:
+                snapped_lines = apply_approved_snaps(line_gdf, approved_snap_json, id_col="id", inplace=False)
+                approved_merge_json = approved_merge_json or []
+                merge_groups = [m["merged_from"] for m in approved_merge_json]
+                merged_lines = apply_approved_merges(snapped_lines, merge_groups, id_col="id", inplace=False)
+                routecorrected = validateRoute(merged_lines, route_ids, id_col="id", inplace=False)
+                edited_lines_geojson = json.loads(routecorrected.to_json())
+                edited_line_features = edited_lines_geojson["features"]
+            else:
+                edited_line_features = []
 
 
             # 3) combine back with polygons
@@ -723,14 +725,19 @@ def validate(request):
             elif gtype in ("Point", "MultiPoint"):
                 point_features.append(f)
 
-        # Convert lines to GeoDataFrame
-        line_gdf = gpd.GeoDataFrame.from_features(line_features)
-
-        # --- Snap and merge Lines ---
-        snapped_lines, snapped_ids = snap_line_endpoints(line_gdf)
-        grouped_snaps = find_snapped_groups(line_gdf, snapped_lines)
-        merged_lines_json, id_mapping, merged_audit = merge_simple_intersections(snapped_lines)
-        snap_id_pairs = [sorted(list(g)) for g in grouped_snaps]
+        # Convert lines to GeoDataFrame. Polygons-only sketchmaps (no streets)
+        # bypass the snap / merge pipeline, same guard as the metric branch.
+        if line_features:
+            line_gdf = gpd.GeoDataFrame.from_features(line_features)
+            snapped_lines, snapped_ids = snap_line_endpoints(line_gdf)
+            grouped_snaps = find_snapped_groups(line_gdf, snapped_lines)
+            merged_lines_json, id_mapping, merged_audit = merge_simple_intersections(snapped_lines)
+            snap_id_pairs = [sorted(list(g)) for g in grouped_snaps]
+        else:
+            line_gdf = None
+            id_mapping = {}
+            merged_audit = []
+            snap_id_pairs = []
 
 
         audit = {
@@ -750,16 +757,16 @@ def validate(request):
             approved_snap_json = json.loads(approved_snap_pairs) if approved_snap_pairs else []
             approved_merge_json = json.loads(approved_merge_pairs) if approved_merge_pairs else []
 
-            snapped_lines = apply_approved_snaps(line_gdf, approved_snap_json, id_col="id", inplace=False)
-
-            approved_merge_json = approved_merge_json or []
-            merge_groups = [m["merged_from"] for m in approved_merge_json]
-            merged_lines = apply_approved_merges(snapped_lines, merge_groups, id_col="id", inplace=False)
-
-            routecorrected = validateRoute(merged_lines, route_ids, id_col="id", inplace=False)
-
-            edited_lines_geojson = json.loads(routecorrected.to_json())
-            edited_line_features = edited_lines_geojson["features"]
+            if line_gdf is not None:
+                snapped_lines = apply_approved_snaps(line_gdf, approved_snap_json, id_col="id", inplace=False)
+                approved_merge_json = approved_merge_json or []
+                merge_groups = [m["merged_from"] for m in approved_merge_json]
+                merged_lines = apply_approved_merges(snapped_lines, merge_groups, id_col="id", inplace=False)
+                routecorrected = validateRoute(merged_lines, route_ids, id_col="id", inplace=False)
+                edited_lines_geojson = json.loads(routecorrected.to_json())
+                edited_line_features = edited_lines_geojson["features"]
+            else:
+                edited_line_features = []
 
             # 3) combine back with polygons
             final_geojson = {
@@ -767,6 +774,8 @@ def validate(request):
                 "features": edited_line_features + polygon_features + point_features
             }
 
+            # id_mapping is {} when no streets existed; convert_mapping_to_sketch_ids
+            # and remap_alignment_ids become no-ops in that case.
             sketch_id_mapping = convert_mapping_to_sketch_ids(id_mapping)
 
             print("================================")

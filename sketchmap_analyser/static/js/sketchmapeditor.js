@@ -1039,7 +1039,10 @@ drawnItems.eachLayer(function(blayer){
                 checkAlignnum = 1;
                 alignmentArraySingleMap={};
          var idArray = Object.values(drawnSketchItems.toGeoJSON().features).map((item) => item.properties.id);
-         id = Math.max.apply(Math, idArray);
+         // Math.max.apply(Math, []) returns -Infinity; guard so a freshly
+         // uploaded (feature-less) sketchmap doesn't leave id at -Infinity
+         // and produce "S-Infinity" sids on the next pm:create.
+         id = idArray.length > 0 ? Math.max.apply(Math, idArray) : 0;
                 drawnSketchItems.eachLayer(function(slayer){
                     slayer.feature.properties.selected = false;
                     slayer.feature.properties.aligned = false;
@@ -1067,7 +1070,8 @@ drawnItems.eachLayer(function(blayer){
             checkAlignnum = AlignmentArray[sketchMaptitle].checkAlignnum;
             alignmentArraySingleMap=AlignmentArray[sketchMaptitle];
          var idArray = Object.values(drawnSketchItems.toGeoJSON().features).map((item) => item.properties.id);
-         id = Math.max.apply(Math, idArray);
+         // Same guard as the other thumbnail branch above.
+         id = idArray.length > 0 ? Math.max.apply(Math, idArray) : 0;
              drawnSketchItems.eachLayer(function(slayer){
                   delete slayer.feature.properties.group;
                   delete slayer.feature.properties.groupID;
@@ -2421,7 +2425,7 @@ if (commonPair) {
                 var smName = names[i];
                 var layer = (typeof allOriginalSketchMaps !== 'undefined') ? allOriginalSketchMaps[smName] : null;
                 if (!layer || typeof layer.eachLayer !== 'function') continue;
-                var landmarks = 0, routes = 0, alignedFeatures = 0;
+                var landmarks = 0, routes = 0, streets = 0, alignedFeatures = 0;
                 var endpointCounts = {};
                 layer.eachLayer(function(slayer) {
                     var p = slayer.feature && slayer.feature.properties;
@@ -2430,6 +2434,7 @@ if (commonPair) {
                     if (p.otype === "Polygon") landmarks++;
                     if (p.isRoute === "Yes") routes++;
                     if (p.otype === "Line") {
+                        streets++;
                         var gj = slayer.toGeoJSON();
                         var coords = gj.geometry && gj.geometry.coordinates;
                         if (coords && coords.length >= 2) {
@@ -2444,6 +2449,7 @@ if (commonPair) {
                 for (var k in endpointCounts) if (endpointCounts[k] >= 3) junctions++;
                 result[smName] = {
                     landmarks: landmarks,
+                    streets: streets,
                     routes: routes,
                     junctions: junctions,
                     alignedFeatures: alignedFeatures
@@ -2455,9 +2461,33 @@ if (commonPair) {
         var __checkboxRules = {
             chkAccuracy: {
                 displayName: 'Qualitative Accuracy',
-                predicate: function(s) { return s.junctions >= 1 && s.routes >= 1 && s.landmarks >= 1; },
-                needText: 'needs an aligned junction, marked route, and aligned landmark',
-                detail: function(s) { return 'junctions=' + s.junctions + ', routes=' + s.routes + ', landmarks=' + s.landmarks; }
+                // Umbrella: enabled when at least one of the three group
+                // sub-rules can run on at least one sketchmap.
+                predicate: function(s) {
+                    return s.landmarks >= 2
+                        || s.streets >= 2
+                        || (s.landmarks >= 1 && s.streets >= 1);
+                },
+                needText: 'needs ≥2 aligned landmarks, OR ≥2 aligned streets, OR at least one of each',
+                detail: function(s) { return 'landmarks=' + s.landmarks + ', streets=' + s.streets; }
+            },
+            chkAccBuildings: {
+                displayName: 'Buildings-only (RCC11)',
+                predicate: function(s) { return s.landmarks >= 2; },
+                needText: 'needs at least 2 aligned landmarks',
+                detail: function(s) { return 'landmarks=' + s.landmarks; }
+            },
+            chkAccStreets: {
+                displayName: 'Streets-only (Street Topology, OPRA)',
+                predicate: function(s) { return s.streets >= 2; },
+                needText: 'needs at least 2 aligned streets',
+                detail: function(s) { return 'streets=' + s.streets; }
+            },
+            chkAccStreetBuilding: {
+                displayName: 'Street–building (DE9IM, Left/Right, Linear Ordering)',
+                predicate: function(s) { return s.landmarks >= 1 && s.streets >= 1; },
+                needText: 'needs at least 1 aligned landmark and 1 aligned street',
+                detail: function(s) { return 'landmarks=' + s.landmarks + ', streets=' + s.streets; }
             },
             chkBuildingsGMDA: {
                 displayName: 'Buildings GMDA',
@@ -2484,6 +2514,26 @@ if (commonPair) {
                 detail: function(s) { return 'junctions=' + s.junctions; }
             }
         };
+
+        // Build the "which sub-measures will actually run" note for the
+        // Street-building group. Called from refreshCheckboxAvailability
+        // whenever the group checkbox is enabled.
+        function __streetBuildingNote(stats) {
+            var names = Object.keys(stats);
+            var rule = __checkboxRules.chkAccStreetBuilding;
+            if (!rule) return '';
+            var passing = names.filter(function(n){ return rule.predicate(stats[n]); });
+            if (passing.length === 0) return '';
+            var withRoute = passing.filter(function(n){ return stats[n].routes >= 1; }).length;
+            if (withRoute === passing.length) {
+                return 'All three sub-measures available.';
+            }
+            if (withRoute === 0) {
+                return 'Route is required for Left/Right and Linear Ordering.';
+            }
+            return 'DE9IM in all; Left/Right + Linear Ordering only where a route is marked ('
+                + withRoute + ' of ' + passing.length + ' sketchmaps).';
+        }
 
         // For each rule: disable the checkbox iff NO sketchmap can satisfy it.
         // If at least one sketchmap passes, leave it tickable — the "Continue
@@ -2523,11 +2573,68 @@ if (commonPair) {
                     }
                 }
             });
+
+            // Street-building note: show which of its three sub-measures
+            // will actually run given the current route presence.
+            var sbLabel = (document.getElementById('chkAccStreetBuilding') || {}).closest
+                ? document.getElementById('chkAccStreetBuilding').closest('.modal-option')
+                : null;
+            var sbNoteEl = document.getElementById('note-chkAccStreetBuilding');
+            if (sbLabel && sbNoteEl) {
+                var text = sbLabel.classList.contains('rule-failed') ? '' : __streetBuildingNote(stats);
+                sbNoteEl.textContent = text;
+                sbLabel.classList.toggle('has-note', text.length > 0);
+            }
+        }
+
+        // The umbrella Spatial Accuracy checkbox mirrors the three group
+        // checkboxes under it (Buildings-only / Streets-only / Street-building):
+        //   - ticking the umbrella ticks every ENABLED group;
+        //   - unticking it clears all three;
+        //   - a group toggle re-syncs the umbrella (checked iff any group is).
+        var __QA_GROUP_IDS = ['chkAccBuildings', 'chkAccStreets', 'chkAccStreetBuilding'];
+
+        function __syncUmbrellaFromGroups() {
+            var master = document.getElementById('chkAccuracy');
+            if (!master) return;
+            var anyOn = __QA_GROUP_IDS.some(function(id) {
+                var el = document.getElementById(id);
+                return el && el.checked;
+            });
+            master.checked = anyOn;
+        }
+
+        function __applyUmbrellaToGroups() {
+            var master = document.getElementById('chkAccuracy');
+            if (!master) return;
+            __QA_GROUP_IDS.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el || el.disabled) return;
+                el.checked = master.checked;
+            });
+        }
+
+        function bindQAGroupSync() {
+            var master = document.getElementById('chkAccuracy');
+            if (master && !master.__qaBound) {
+                master.addEventListener('change', __applyUmbrellaToGroups);
+                master.__qaBound = true;
+            }
+            __QA_GROUP_IDS.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el || el.__qaBound) return;
+                el.addEventListener('change', __syncUmbrellaFromGroups);
+                el.__qaBound = true;
+            });
         }
 
         function openAnalyseModal() {
             __analysisStats = computeAnalysisStats();
             refreshCheckboxAvailability();
+            bindQAGroupSync();
+            // Keep umbrella in sync with whatever the groups show now
+            // (e.g. a group just became disabled -> umbrella rechecks).
+            __syncUmbrellaFromGroups();
             document.getElementById('analyseModal').style.display = 'flex';
         }
 
@@ -2539,7 +2646,18 @@ if (commonPair) {
         // Completeness is hardcoded true regardless of DOM state — the checkbox
         // is disabled in the UI, but this is a safety net against devtools tampering.
         const completeness = true;
-        const accuracy = document.getElementById('chkAccuracy').checked;
+        const accBuildings      = (document.getElementById('chkAccBuildings')      || {}).checked === true;
+        const accStreets        = (document.getElementById('chkAccStreets')        || {}).checked === true;
+        const accStreetBuilding = (document.getElementById('chkAccStreetBuilding') || {}).checked === true;
+        // Accuracy "runs" when at least one of its three groups is selected,
+        // regardless of the umbrella's own checked state (defensive).
+        const accuracy = accBuildings || accStreets || accStreetBuilding;
+        // qa_groups is forwarded to analyseMultiMap -> analyzeQualitative so
+        // the server only runs the sub-measures that belong to selected groups.
+        const qaGroups = [];
+        if (accBuildings)      qaGroups.push('buildings');
+        if (accStreets)        qaGroups.push('streets');
+        if (accStreetBuilding) qaGroups.push('streetbuilding');
         const buildingsGMDA = document.getElementById('chkBuildingsGMDA').checked;
         const junctionsGMDA = document.getElementById('chkJunctionsGMDA').checked;
         const landmarksBDR = document.getElementById('chkLandmarksBDR').checked;
@@ -2608,7 +2726,7 @@ if (commonPair) {
 
         // analyseMultiMap populates allGenBaseMap, which will then be used by GMDA calculators
         // so, it must be finished first then the GMDA will run.
-        await analyseMultiMap(completeness, accuracy);
+        await analyseMultiMap(completeness, accuracy, qaGroups);
 
         if (buildingsGMDA) {
             await computeGMDAFromAllGenBaseMap();
