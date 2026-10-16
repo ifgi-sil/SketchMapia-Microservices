@@ -6,7 +6,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Keep the qemu-user-static package and executable path predictable.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -24,3 +25,18 @@ jobs:
             python manage.py migrate --noinput
             python manage.py test --noinput
           '
+      - name: Install CPU compatibility test emulator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-user-static
+      - name: Test without x86-64-v2 CPU instructions
+        timeout-minutes: 5
+        # qemu64 exposes SSE3 but lacks the newer instructions required by
+        # NumPy >=2.4 wheels. Standard GitHub runners do not catch this.
+        run: |
+          docker run --rm --ulimit core=0 --platform linux/amd64 \
+            --mount type=bind,source=/usr/bin/qemu-x86_64-static,target=/opt/qemu-x86_64-static,readonly \
+            --entrypoint /opt/qemu-x86_64-static \
+            -e OPENBLAS_NUM_THREADS=1 -e OMP_NUM_THREADS=1 \
+            service-test -cpu qemu64 /usr/local/bin/python \
+            manage.py test --noinput
