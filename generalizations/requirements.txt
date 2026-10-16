@@ -4,6 +4,7 @@ django-cors-headers==4.9.0
 djangorestframework==3.18.3
 geojson==3.3.0
 geopandas==1.2.0
-numpy==2.5.4
+# NumPy >=2.4 x86-64 wheels require x86-64-v2, unavailable on the server VM.
+numpy==2.3.5
 pandas==2.3.3
 shapely==2.2.0

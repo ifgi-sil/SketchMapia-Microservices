@@ -45,30 +45,73 @@ separate GDAL/PROJ development packages. Build exclusions prevent Python bytecod
 The existing SQLite files remain in the build context, preserving the
 previous image behavior.
 
+## Server CPU compatibility
+
+The production VM does not expose all x86-64-v2 instructions. NumPy 2.4
+raised its default x86 CPU baseline to that level, so the original upgrade's
+NumPy 2.5.4 wheels failed during import. This stopped Django startup and
+caused Apache to return 503. See the
+[NumPy 2.4 release notes](https://numpy.org/doc/stable/release/2.4.0-notes.html#modulate-dispatched-x86-cpu-features).
+
+All six services that use NumPy now explicitly pin `numpy==2.3.5`, including
+the UI, which previously obtained NumPy indirectly through pandas. Python
+remains 3.12.15 and Django remains 5.2.18. Completeness does not use NumPy.
+The pin prevents a future image rebuild from silently selecting the
+incompatible wheels again.
+
+CI also runs each service's regression tests through QEMU's `qemu64` CPU
+model, which lacks the newer instructions. This is separate from the
+normal modern-CPU image checks. The emulator is used only for testing and
+is not installed in the runtime images.
+
+Preserve the UI database before publishing, following the deployment steps
+below: the existing Watchtower setup updates containers automatically.
+After CI publishes the corrected images, use the existing Compose file in
+the server deployment directory (`~/sketchMapia-2025` in the supplied logs):
+
+```bash
+sudo docker compose pull
+sudo docker compose up -d
+sudo docker compose ps -a
+sudo docker compose logs --tail=100 sketchmap_analyser
+sudo docker compose exec sketchmap_analyser python -c 'import numpy; print(numpy.__version__)'
+curl --max-time 10 -i http://127.0.0.1:8000/
+```
+
+The server uses its default Compose file; `docker-compose.server.yml` is
+only a reference copy in this repository and was absent on the server.
+Follow the database preservation steps below before replacing containers.
+A longer-term infrastructure option is to expose x86-64-v2 CPU features to
+the VM if its host supports them; that would allow future NumPy upgrades
+without this compatibility pin.
+
 ## Validation
 
-All eighteen current regression tests and all seven Django system checks
-pass in the isolated local Python 3.12 environment. The missing-alignment
-test covers omissions by each researcher across ten maps.
+All eighteen current regression tests pass in rebuilt Linux amd64 images
+both normally and under QEMU's older `qemu64` CPU model. All seven images
+also pass dependency checks, Django system checks, migration generation
+checks and migrations. The missing-alignment test covers omissions by each
+researcher across ten maps.
 
-The initial Linux amd64 image validation passed its seventeen tests,
-dependency checks, Django checks, migration generation checks, migrations,
-WSGI/ASGI loading and the normal container command followed by an HTTP
-startup probe. Those image runs include the repository's SQLite files and
-precede the missing-alignment guard and obsolete-setting cleanup; these
-follow-up edits were verified locally.
-A separate database created with Django 3.2.22 was migrated to Django
-5.2.18; its original user/password and session login/logout still work.
+The corrected UI also served real HTTP requests for `/` and
+`/generalizingmaps/` with status 200 under `qemu64`. NumPy reported an
+SSE/SSE2/SSE3 baseline, with SSSE3, SSE4.1, SSE4.2 and AVX unavailable.
+This covers the CPU limitation missed by the original modern-CPU checks.
 
-| Service | Current regression tests | Initial Linux image and startup |
-| --- | ---: | --- |
-| sketchmap_analyser | 4 | Pass |
-| generalizations | 3 | Pass |
-| validation | 4 | Pass |
-| completeness | 1 | Pass |
-| accuracy / qualitativerelations | 1 | Pass |
-| gmda | 3 | Pass |
-| bdr | 2 | Pass |
+The initial upgrade additionally verified WSGI/ASGI loading, normal
+container startup and migration of a separate Django 3.2.22 database to
+5.2.18, preserving its original user's password and session login/logout.
+Image runs include the repository's SQLite files.
+
+| Service | Regression tests | Normal CPU | Older CPU (`qemu64`) |
+| --- | ---: | --- | --- |
+| sketchmap_analyser | 4 | Pass | Pass |
+| generalizations | 3 | Pass | Pass |
+| validation | 4 | Pass | Pass |
+| completeness | 1 | Pass | Pass |
+| accuracy / qualitativerelations | 1 | Pass | Pass |
+| gmda | 3 | Pass | Pass |
+| bdr | 2 | Pass | Pass |
 
 The regression tests cover:
 
