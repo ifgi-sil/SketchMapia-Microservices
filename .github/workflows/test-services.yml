@@ -1,0 +1,26 @@
+name: Test Python 3.12 services
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [sketchmap_analyser, generalizations, validation, completeness, accuracy, gmda, bdr]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Linux amd64 image
+        run: docker build --platform linux/amd64 -t service-test ./${{ matrix.service }}
+      - name: Check dependencies, migrations and regression tests
+        run: |
+          docker run --rm --platform linux/amd64 service-test bash -ec '
+            python -m pip check
+            python manage.py check
+            python manage.py makemigrations --check --dry-run
+            python manage.py migrate --noinput
+            python manage.py test --noinput
+          '

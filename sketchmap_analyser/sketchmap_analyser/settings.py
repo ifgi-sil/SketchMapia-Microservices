@@ -117,7 +117,6 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_L10N = True
 
 USE_TZ = True
 
@@ -134,6 +133,9 @@ STATICFILES_DIRS = (
 
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
+
+# Preserve the primary-key type used by this project before Django 5.2.
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 
 CORS_ALLOW_ALL_ORIGINS = True

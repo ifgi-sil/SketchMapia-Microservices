@@ -26,10 +26,10 @@ def compareResults(request):
     arrayOfResearchers = [0] * 3
     rearrangedDfAlign = [0] * 3
     diff = [0] * 10
-    if (request.is_ajax()):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         for i in range(3):
             arrayOfResearchers[i] = request.FILES.get("uploadR" + str(i + 1) + "align")
-            df = pd.read_csv(arrayOfResearchers[i], error_bad_lines=False)
+            df = pd.read_csv(arrayOfResearchers[i], on_bad_lines='skip', dtype={'BaseId': str})
             df = df[(df['BaseId'] != "Features drawn extra in sketch map") & (
                         df['BaseId'] != "Features missing in sketch map")]
             sorteddf = df.sort_values('Sketch Map')
@@ -55,12 +55,12 @@ def compareResults(request):
                 diff[j]['R3'] = pd.NA
             diff[j] = diff[j].reindex(sorted(diff[j].columns), axis=1)
             for index, row in diff[j].iterrows():
-                if pd.isna(row['R1']):
-                    row['R1']= rearrangedDfAlign[0][j]['Generalization Type'].loc[(rearrangedDfAlign[0][j]['BaseId'])==index]
-                if pd.isna(row['R2']):
-                    row['R2']= rearrangedDfAlign[1][j]['Generalization Type'].loc[(rearrangedDfAlign[1][j]['BaseId'])==index]
-                if pd.isna(row['R3']):
-                    row['R3']= rearrangedDfAlign[2][j]['Generalization Type'].loc[(rearrangedDfAlign[2][j]['BaseId'])==index]
+                for i, researcher in enumerate(['R1', 'R2', 'R3']):
+                    if pd.isna(row[researcher]):
+                        aligned = rearrangedDfAlign[i][j]
+                        matches = aligned.loc[aligned['BaseId'] == index, 'Generalization Type']
+                        # A researcher may not have aligned this base feature.
+                        diff[j].at[index, researcher] = matches.iloc[0] if not matches.empty else None
             print(diff[j].to_string())
             diff[j] = diff[j].to_json(orient="split")
 

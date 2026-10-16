@@ -125,7 +125,6 @@ docker-compose up --build
 
 The service is exposed on port `8003`.
 
-> `requirements.txt` for this service is UTF-16 encoded. If `pip install -r` fails with an encoding error, convert it first: `iconv -f UTF-16 -t UTF-8 requirements.txt -o requirements.utf8.txt`.
 
 ## Project structure
 
