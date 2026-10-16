@@ -1,8 +1,8 @@
 # Use an official Python runtime as a parent image
-FROM python:3.8.20
+FROM python:3.12.15-bookworm
 
 # Set environment variables
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 # Build metadata injected by CI (.github/workflows/registry-build-publish.yml);
 # shown as the version badge in the UI. Empty in local dev builds.
@@ -22,7 +22,9 @@ COPY requirements.txt /app/
 # # Copy the current directory contents into the container at /app
 # COPY . /app
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
+
+ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY . /app/
 # # Define the command to run on container start

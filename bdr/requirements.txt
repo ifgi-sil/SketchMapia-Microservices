@@ -1,8 +1,8 @@
-Django==3.2.22
-django-cors-headers==4.1.0
-djangorestframework==3.14.0
-numpy==1.21.6
-shapely==2.0.2
-geopandas
-scikit-image
-scikit-learn
+# Runtime dependencies for Python 3.12.
+Django==5.2.18
+django-cors-headers==4.9.0
+djangorestframework==3.18.3
+geopandas==1.2.0
+numpy==2.5.4
+pandas==2.3.3
+scikit-image==0.26.0

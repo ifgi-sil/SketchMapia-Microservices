@@ -2,7 +2,6 @@ import json
 import numpy as np
 import geopandas as gpd
 import skimage as sk
-import sklearn.metrics as met
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 

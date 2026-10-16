@@ -7,8 +7,8 @@
 Developed by the [Spatial Intelligence Lab (SIL)](https://www.uni-muenster.de/Geoinformatics/en/sil/) · Institute for Geoinformatics (IFGI) · University of Münster
 
 [![Build & Publish](https://github.com/ifgi-sil/SketchMapia-Microservices/actions/workflows/registry-build-publish.yml/badge.svg)](https://github.com/ifgi-sil/SketchMapia-Microservices/actions/workflows/registry-build-publish.yml)
-![Python](https://img.shields.io/badge/Python-3.8-3776AB?logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-3.2-092E20?logo=django&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -23,6 +23,10 @@ Developed by the [Spatial Intelligence Lab (SIL)](https://www.uni-muenster.de/Ge
 SketchMapia compares hand-drawn **sketch maps** against reference **base maps** and quantifies how accurately people represent space. A central web application (the *Sketchmap Analyser*) orchestrates a family of independent Django microservices, each implementing one analysis method — from completeness and qualitative spatial relations to the **Gardony Map Drawing Analyzer (GMDA)** and **Bi-Dimensional Regression (BDR)**.
 
 Every service is containerized, published automatically to the GitHub Container Registry, and deployed behind a single HTTPS reverse proxy.
+
+The runtime is Python 3.12 with Django 5.2 LTS. See the
+[upgrade and validation notes](docs/python-3.12-upgrade.md) for dependency
+changes, checks and rollout considerations.
 
 ## 🏗 Architecture
 

@@ -1,7 +1,6 @@
-Django==3.2.22
-django-cors-headers==4.1.0
-djangorestframework==3.14.0
-numpy==1.21.6
-shapely==2.0.2
-
-
+# Runtime dependencies for Python 3.12.
+Django==5.2.18
+django-cors-headers==4.9.0
+djangorestframework==3.18.3
+numpy==2.5.4
+shapely==2.2.0

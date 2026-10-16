@@ -1,6 +1,6 @@
 # generalizations — SKETCHMAPIA Generalization Microservice
 
-![Python](https://img.shields.io/badge/Python-3.8.20-blue)
+![Python](https://img.shields.io/badge/Python-3.12.15-blue)
 ![Django](https://img.shields.io/badge/Django-microservice-green)
 ![Docker](https://img.shields.io/badge/Docker-compose-2496ED)
 ![Port](https://img.shields.io/badge/generalizations-:8001-orange)
@@ -111,7 +111,6 @@ docker-compose up --build
 
 The service is exposed on port `8001`.
 
-> `requirements.txt` for this service is UTF-16 encoded. If `pip install -r` fails with an encoding error, convert it first: `iconv -f UTF-16 -t UTF-8 requirements.txt -o requirements.utf8.txt`.
 
 ## Project structure
 

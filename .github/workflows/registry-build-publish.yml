@@ -6,7 +6,11 @@ on:
       - main
 
 jobs:
+  test-services:
+    uses: ./.github/workflows/test-services.yml
+
   build-and-push:
+    needs: test-services
     runs-on: ubuntu-latest
 
     steps:
