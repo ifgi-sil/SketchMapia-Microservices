@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 import json
 from shapely import ops, union_all,reverse
-from shapely.geometry import Point, box, LineString
+from shapely.geometry import Point, box, LineString, MultiLineString
 from shapely.ops import snap, unary_union, linemerge
 import numbers
 import numpy as np
@@ -38,37 +38,24 @@ def get_max_route_order(gdf, idxs, prop="sketchrouteorder"):
 
 
 def merge_lines_ordered(geoms):
+    """Merge a set of LineStrings into one geometry.
 
+    Uses shapely.ops.linemerge which walks the endpoint graph properly and
+    only chains segments that actually touch. When the input is a single
+    chain, the result is a LineString; when the input contains branches or
+    disconnected pieces, the result is a MultiLineString -- every piece is
+    preserved, nothing is dropped.
+
+    The previous implementation iterated in id order and, when the next
+    segment did not touch the previous end, attached it to the nearest
+    endpoint anyway -- producing a straight-line jump across the map.
+    """
     if not geoms:
         return None
-
-    geoms = [LineString(g.coords) for g in geoms]
-
-    merged_coords = list(geoms[0].coords)
-
-    for g in geoms[1:]:
-
-        start = merged_coords[-1]
-
-        g_coords = list(g.coords)
-
-        if g_coords[0] == start:
-            merged_coords.extend(g_coords[1:])
-
-        elif g_coords[-1] == start:
-            merged_coords.extend(g_coords[-2::-1])
-
-        else:
-            # find closest endpoint
-            d1 = (g_coords[0][0]-start[0])**2 + (g_coords[0][1]-start[1])**2
-            d2 = (g_coords[-1][0]-start[0])**2 + (g_coords[-1][1]-start[1])**2
-
-            if d1 < d2:
-                merged_coords.extend(g_coords[1:])
-            else:
-                merged_coords.extend(g_coords[-2::-1])
-
-    return LineString(merged_coords)
+    if len(geoms) == 1:
+        return LineString(geoms[0].coords)
+    merged = linemerge(list(geoms))
+    return merged
 
 def merge_simple_intersections(linegdf):
 
@@ -362,6 +349,22 @@ def validateRoute(line_gdf, route_ids, id_col="id", inplace=False):
     gdf = line_gdf if inplace else line_gdf.copy()
     id_to_idx = {val: idx for idx, val in gdf[id_col].items()}
 
+    def _geom_endpoints(geom):
+        """Return (first_coord, last_coord) for either a LineString or a
+        MultiLineString. MultiLineString arises when merge_lines_ordered
+        collapsed a merge group whose segments do not chain into a single
+        line (branches or disconnected bits). We treat the LONGEST sub-line
+        as the "through" piece and use its endpoints for route orientation;
+        the shorter branches remain in the geometry for GeoJSON output but
+        don't drive the route reorder/reverse logic.
+        """
+        if isinstance(geom, MultiLineString):
+            longest = max(geom.geoms, key=lambda ls: ls.length)
+            coords = list(longest.coords)
+        else:
+            coords = list(geom.coords)
+        return tuple(coords[0]), tuple(coords[-1])
+
     # normalize
     if not isinstance(route_ids[0], list):
         route_steps = [[rid] for rid in route_ids]
@@ -384,8 +387,7 @@ def validateRoute(line_gdf, route_ids, id_col="id", inplace=False):
                 if idx is None:
                     continue
                 geom  = gdf.at[idx, "geometry"]
-                start = tuple(geom.coords[0])
-                end   = tuple(geom.coords[-1])
+                start, end = _geom_endpoints(geom)
 
                 d_start = (start[0]-current_point[0])**2 + (start[1]-current_point[1])**2
                 d_end   = (end[0]-current_point[0])**2   + (end[1]-current_point[1])**2
@@ -407,7 +409,7 @@ def validateRoute(line_gdf, route_ids, id_col="id", inplace=False):
 
             ordered.append(best_id)
             remaining.remove(best_id)
-            current_point = tuple(gdf.at[best_idx, "geometry"].coords[-1])
+            _, current_point = _geom_endpoints(gdf.at[best_idx, "geometry"])
 
         return ordered, current_point
 
@@ -422,22 +424,20 @@ def validateRoute(line_gdf, route_ids, id_col="id", inplace=False):
         # entry to first group is whichever end of second group's first segment
         # is NOT the connection point — use start of second group as the
         # "far end" to orient first group towards it
-        entry_for_first = tuple(s_geom.coords[0])
+        entry_for_first, _ = _geom_endpoints(s_geom)
     else:
         f_idx = id_to_idx.get(first_group[0])
-        entry_for_first = tuple(gdf.at[f_idx, "geometry"].coords[0])
+        entry_for_first, _ = _geom_endpoints(gdf.at[f_idx, "geometry"])
 
     # sort first group spatially, ending closest to second group
     # we want the EXIT of first group to be close to second group entry
     # so we find entry_point as the opposite end — use the far end of second group
     s_geom      = gdf.at[s_idx, "geometry"]
-    s_start     = tuple(s_geom.coords[0])
-    s_end       = tuple(s_geom.coords[-1])
+    s_start, s_end = _geom_endpoints(s_geom)
 
     f_idx0      = id_to_idx.get(first_group[0])
     f_geom0     = gdf.at[f_idx0, "geometry"]
-    f_start     = tuple(f_geom0.coords[0])
-    f_end       = tuple(f_geom0.coords[-1])
+    f_start, f_end = _geom_endpoints(f_geom0)
 
     # pick whichever end of first segment is farther from second group
     d_fs = min((f_start[0]-s_start[0])**2+(f_start[1]-s_start[1])**2,
@@ -678,6 +678,23 @@ def validate(request):
                 approved_merge_json = approved_merge_json or []
                 merge_groups = [m["merged_from"] for m in approved_merge_json]
                 merged_lines = apply_approved_merges(snapped_lines, merge_groups, id_col="id", inplace=False)
+
+                # Remap route ids through the APPROVED merges. apply_approved_merges
+                # keeps group[0] as representative and drops the rest, so any route
+                # entry pointing at a merged-away id must be rewritten to the rep.
+                # Without this, validateRoute does gdf.at[None, "geometry"] and
+                # crashes with KeyError: None.
+                applied_mapping = {}
+                for group in merge_groups:
+                    if group and len(group) >= 2:
+                        rep = group[0]
+                        for mid in group:
+                            applied_mapping[mid] = rep
+                if applied_mapping and route_ids:
+                    remapped = [applied_mapping.get(rid, rid) for rid in route_ids]
+                    seen = set()
+                    route_ids = [x for x in remapped if not (x in seen or seen.add(x))]
+
                 routecorrected = validateRoute(merged_lines, route_ids, id_col="id", inplace=False)
                 edited_lines_geojson = json.loads(routecorrected.to_json())
                 edited_line_features = edited_lines_geojson["features"]
@@ -762,6 +779,21 @@ def validate(request):
                 approved_merge_json = approved_merge_json or []
                 merge_groups = [m["merged_from"] for m in approved_merge_json]
                 merged_lines = apply_approved_merges(snapped_lines, merge_groups, id_col="id", inplace=False)
+
+                # Same route-remap guard as the metric branch: route ids that got
+                # merged away must be rewritten to the surviving representative,
+                # otherwise validateRoute hits KeyError: None.
+                applied_mapping = {}
+                for group in merge_groups:
+                    if group and len(group) >= 2:
+                        rep = group[0]
+                        for mid in group:
+                            applied_mapping[mid] = rep
+                if applied_mapping and route_ids:
+                    remapped = [applied_mapping.get(rid, rid) for rid in route_ids]
+                    seen = set()
+                    route_ids = [x for x in remapped if not (x in seen or seen.add(x))]
+
                 routecorrected = validateRoute(merged_lines, route_ids, id_col="id", inplace=False)
                 edited_lines_geojson = json.loads(routecorrected.to_json())
                 edited_line_features = edited_lines_geojson["features"]
