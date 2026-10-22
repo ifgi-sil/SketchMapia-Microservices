@@ -17,6 +17,8 @@ services:
       - "8001:8001"
     volumes:
       - ./generalizations:/app
+      - ./shared:/app/shared
+      - ./measurement_config.json:/app/measurement_config.json
     restart: always
 
   completeness:
@@ -26,6 +28,8 @@ services:
       - "8002:8002"
     volumes:
       - ./completeness:/app
+      - ./shared:/app/shared
+      - ./measurement_config.json:/app/measurement_config.json
     restart: always
 
   qualitativerelations:

@@ -15,6 +15,13 @@ from shapely.ops import unary_union,polygonize, substring
 from copy import deepcopy
 import pandas as pd
 
+# Stamp per-feature on_route / street_position flags for the weighted
+# measurement scheme. See shared/feature_flags.py for the rules.
+try:
+    from shared.feature_flags import annotate_route_flags
+except Exception:  # pragma: no cover - optional until wired in Dockerfiles
+    annotate_route_flags = None
+
 
 
 
@@ -1618,8 +1625,12 @@ def spatial_transformation():
         if prop.get('id') not in temp_loop_ids and prop.get('id') not in missingstreet_ids:
             line = shapely.geometry.LineString(x)
             wkt_string = line.wkt
-            features.append(Feature(geometry=shapely.wkt.loads(wkt_string),
-                                    properties = prop ))
+            # Append directly to feature_collection: geojson>=3 copies the list
+            # at FeatureCollection(features) construction, so features.append(...)
+            # here would not be reflected in feature_collection["features"].
+            feature_collection["features"].append(
+                Feature(geometry=shapely.wkt.loads(wkt_string), properties=prop)
+            )
 
 
     for x, prop in zip(mis_res_p, mis_ids_p_prop):
@@ -1630,7 +1641,7 @@ def spatial_transformation():
 
 
         # copy geometry without modification
-        features.append({
+        feature_collection["features"].append({
             "type": "Feature",
             "geometry": deepcopy(original_feature["geometry"]),
             "properties": prop
@@ -1685,6 +1696,15 @@ def spatial_transformation():
     align.close()
     base.close()
     sketch.close()
+
+    # Weighted-measurement-scheme flags: on_route for every feature,
+    # street_position (end/middle) for every street. Downstream scoring
+    # (completeness, generalization) reads these off properties.
+    if annotate_route_flags is not None:
+        try:
+            annotate_route_flags(combined_feature_collection)
+        except Exception as exc:
+            print("annotate_route_flags failed:", exc)
 
     outputpath =  os.path.join(USER_PROJ_DIR,"generalizedoutputMap"+".json")
     if os.path.exists(outputpath):

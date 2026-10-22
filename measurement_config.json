@@ -1,0 +1,21 @@
+{
+  "weights": {
+    "route": {
+      "off_route": 1,
+      "on_route":  2
+    },
+    "street_position": {
+      "end":    1,
+      "middle": 2
+    },
+    "generalization": {
+      "Amalgamation":                   1,
+      "AbstractionToExistence_landmark":1,
+      "Collapse_landmark":              1,
+      "OmissionMerge":                  1,
+      "JunctionMerge":                  2,
+      "RoundaboutCollapse":             2,
+      "AbstractionToExistence_street":  2
+    }
+  }
+}
