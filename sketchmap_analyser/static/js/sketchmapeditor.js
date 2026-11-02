@@ -20,6 +20,12 @@ var linearOrderingActive = false;
 var linearOrdering = new L.LayerGroup();
 var layerGroup_junctions = new L.LayerGroup();
 var layerGroup_junctions_sm = new L.LayerGroup();
+// 8-point MBR layers (rectangle + its 8 points) that GMDA / BDR really work with
+var layerGroup_gmdaMbr = new L.LayerGroup();      // base map side
+var layerGroup_gmdaMbr_sm = new L.LayerGroup();   // sketch map side
+var layerGroup_bdrMbr = new L.LayerGroup();
+var layerGroup_bdrMbr_sm = new L.LayerGroup();
+var mbrLayersPerSketchmap = { gmda: {}, bdr: {} }; // method -> sketchmap -> {baseMbr, sketchMbr}
 var baseMap;
 var baseMaptitle;
 var drawnItems;
@@ -131,7 +137,9 @@ function renderImageFile(file, location) {
             'Base Map': layerGroupBasemap,
             'Generalized Map': layerGroupBasemapGen,
             'Linear Ordering' : linearOrdering,
-            'Junctions': layerGroup_junctions
+            'Junctions': layerGroup_junctions,
+            'GMDA 8-point MBR': layerGroup_gmdaMbr,
+            'BDR 8-point MBR': layerGroup_bdrMbr
         }).addTo(baseMap);
         labelButton.addTo(baseMap);
         missingFeatureButton.addTo(baseMap);
@@ -986,7 +994,9 @@ drawnItems.eachLayer(function(blayer){
              "Original Sketch Map": sketchOriginalLayer,
             "Generalized_ids": sketchProcessedLayer,
             "Linear Ordering": linearOrdering,
-            'Junctions' : layerGroup_junctions_sm
+            'Junctions' : layerGroup_junctions_sm,
+            "GMDA 8-point MBR": layerGroup_gmdaMbr_sm,
+            "BDR 8-point MBR": layerGroup_bdrMbr_sm
         }).addTo(sketchMap);
 
         sketchMaptitle = $(e.target).parent().attr("data-original-title");
@@ -1012,6 +1022,10 @@ drawnItems.eachLayer(function(blayer){
                     );
                 }
             }).addTo(layerGroup_junctions_sm);
+        }
+
+        if (typeof renderMbrLayers === 'function' && sketchMaptitle) {
+            renderMbrLayers(sketchMaptitle);
         }
 
         console.log("THUMBNAIL CLICKED:",sketchMaptitle);

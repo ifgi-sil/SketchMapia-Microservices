@@ -7,7 +7,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
-
 def _normalize_align_value(v):
     """
     This function normalizes the align values to a list of strings. Since SketchAlign values from 
@@ -56,7 +55,7 @@ def landmark_pairs_generator(v_pairs, b_mbr, s_mbr):
     """
     This function will generate all possible point pairs between every pair of aligned
     landmarks by comparing each of the MBR points of one landmark against 
-    each of the 8 MBR points of another landmakr.  
+    each of the 8 MBR points of another landmark.  
     """
     for i in range(len(v_pairs) - 1):
         b1, s1 = v_pairs[i]
@@ -83,6 +82,59 @@ def landmark_pairs_generator(v_pairs, b_mbr, s_mbr):
                         s1_pts[p1][0], s1_pts[p1][1],
                         s2_pts[p2][0], s2_pts[p2][1]
                     )
+
+
+def mbr_features(role, ref, group_id, pts):
+    """
+    Draws the 8-point minimum bounding rectangle (MBR) of one landmark: one polygon
+    through the 8 points plus the 8 points themselves, numbered 1-8 clockwise from
+    the top-left corner. Base point k is compared with sketch point k in the metrics.
+    """
+    common = {'role': role, 'group_id': group_id, 'ref': ref}
+    ring = [list(pt) for pt in pts] + [list(pts[0])]  # closing the ring
+    feats = [{'type': 'Feature',
+              'geometry': {'type': 'Polygon', 'coordinates': [ring]},
+              'properties': dict(common, kind='mbr')}]
+    for i, pt in enumerate(pts, start=1):
+        feats.append({'type': 'Feature',
+                      'geometry': {'type': 'Point', 'coordinates': list(pt)},
+                      'properties': dict(common, kind='mbr_point', index=i)})
+    return feats
+
+
+def build_mbr_layers(groups, bsm_dict_mbr, skm_dict_mbr, used_base_ids, used_sketch_ids):
+    """
+    Builds the two GeoJSON layers (base map, sketch map) that the frontend draws so the
+    researcher can see the 8 points the metrics are really computed on.
+
+    groups          : Union-Find groups ({'base_ids': set, 'sketch_ids': set}).
+    bsm_dict_mbr    : base_id   -> its 8 MBR points.
+    skm_dict_mbr    : sketch_id -> its 8 MBR points (ids without the 'S').
+    used_base_ids   : base ids that are part of a verified pair.
+    used_sketch_ids : sketch ids that are part of a verified pair.
+
+    Only the landmarks that entered the calculation are drawn (many-to-one groups are
+    excluded from the metrics, so they are not drawn either). Every group gets a group_id,
+    so a base landmark and the sketch landmark(s) aligned to it share one colour.
+    """
+    base_features, sketch_features = [], []
+    ordered_groups = sorted(
+        groups.values(),
+        key=lambda g: (sorted(g['base_ids'])[0] if g['base_ids'] else '')
+    )
+    for group_id, group in enumerate(ordered_groups, start=1):
+        for base_id in sorted(group['base_ids']):
+            if base_id in used_base_ids and base_id in bsm_dict_mbr:
+                base_features += mbr_features('base', base_id, group_id, bsm_dict_mbr[base_id])
+        for sketch_id in sorted(group['sketch_ids']):
+            if sketch_id in used_sketch_ids and sketch_id in skm_dict_mbr:
+                sketch_features += mbr_features('sketch', 'S' + sketch_id, group_id, skm_dict_mbr[sketch_id])
+    return (
+        {'type': 'FeatureCollection', 'features': base_features},
+        {'type': 'FeatureCollection', 'features': sketch_features},
+    )
+
+
 
 class UnionFind:
     """ 
@@ -217,11 +269,21 @@ def compute_gmda(basemap_geojson, sketchmap_geojson):
     nTL = len(bsm_dict_mbr) - len(excluded_base_ids)
     nDL = len(verified_pairs)
 
+    # The 8-point MBR (rectangle + its 8 points) of every landmark that was used,
+    # so the frontend can show exactly the points the metrics are computed on
+    base_mbr_layer, sketch_mbr_layer = build_mbr_layers(
+        groups, bsm_dict_mbr, skm_dict_mbr,
+        used_base_ids = {b for b, s in verified_pairs},
+        used_sketch_ids = {s for b, s in verified_pairs},
+    )
+
     if nDL < 2:
         return {
             'ERROR' : "Insufficient number of aligned Landmark Pairs (Need atleast 2)",
             'Number of Total Landmarks': nTL,
-            'Number of Drawn Landmarks': nDL
+            'Number of Drawn Landmarks': nDL,
+            'basemapMBR': base_mbr_layer,
+            'sketchmapMBR': sketch_mbr_layer,
         }
 
     # Computing GMDA Metrics
@@ -266,6 +328,8 @@ def compute_gmda(basemap_geojson, sketchmap_geojson):
         'AngAcc':  round(float(1 - sum_ang_abs / (180 * n_nDL)), 4) if n_nDL > 0 else 0,
         'nTL': nTL,
         'nDL': nDL,
+        'basemapMBR': base_mbr_layer,
+        'sketchmapMBR': sketch_mbr_layer,
     }
 
 

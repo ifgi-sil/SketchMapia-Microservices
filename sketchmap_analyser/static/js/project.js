@@ -137,7 +137,57 @@ download = true;
   }
 }
 
+// ---------- 8-point MBR layers: the points GMDA / BDR are really computed on ----------
+// one colour per group (a base landmark and the sketch landmark(s) aligned to it)
+const MBR_PALETTE = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
+                     '#42d4f4', '#f032e6', '#9a6324', '#469990', '#808000'];
 
+// Draws the 8-point MBR of the used landmarks: a dashed rectangle through the 8 points
+// plus the 8 points themselves (numbered 1-8, clockwise from the top-left corner).
+// Base point k is compared with sketch point k in the formulas, so the numbers match.
+function addMbrGeoJson(geojson, targetGroup) {
+    // same colour for a base MBR and the sketch MBR(s) aligned to it, so they can be matched by colour
+    const colorOf = f => MBR_PALETTE[(f.properties.group_id - 1) % MBR_PALETTE.length];
+    L.geoJSON(geojson, {
+        style: function (f) {
+            return { color: colorOf(f), weight: 2, dashArray: '4 3', fill: false };
+        },
+        pointToLayer: function (f, latlng) {
+            return L.circleMarker(latlng, { radius: 4, color: colorOf(f), weight: 2,
+                                            fillColor: '#ffffff', fillOpacity: 1 });
+        },
+        onEachFeature: function (f, layer) {
+            const p = f.properties;
+            layer.bindTooltip(
+                p.kind === 'mbr_point'
+                    ? '<b>MBR point ' + p.index + ' / 8</b><br>' + p.ref + ' (group ' + p.group_id + ')'
+                    : '<b>8-point MBR</b><br>' + p.ref + ' (group ' + p.group_id + ')',
+                { direction: 'auto' }
+            );
+        }
+    }).addTo(targetGroup);
+}
+
+// Redraws the 8-point MBR layers of the selected sketchmap,
+// for GMDA and for BDR, on the base map and on the sketch map.
+function renderMbrLayers(sketchmapName) {
+    const sets = {
+        gmda: { baseMbr: layerGroup_gmdaMbr, sketchMbr: layerGroup_gmdaMbr_sm },
+        bdr:  { baseMbr: layerGroup_bdrMbr,  sketchMbr: layerGroup_bdrMbr_sm }
+    };
+    for (const m of Object.keys(sets)) {
+        const g = sets[m];
+        Object.values(g).forEach(group => group.clearLayers());
+        const stored = mbrLayersPerSketchmap[m][sketchmapName];
+        if (!stored) continue;
+        if (stored.baseMbr)   addMbrGeoJson(stored.baseMbr, g.baseMbr);
+        if (stored.sketchMbr) addMbrGeoJson(stored.sketchMbr, g.sketchMbr);
+        // The groups are filled but NOT switched on: tick "GMDA 8-point MBR" / "BDR 8-point MBR"
+        // in the layer box of each map to show them. They only have to be attached to the maps here.
+        if (typeof baseMap !== 'undefined' && baseMap) g.baseMbr.addTo(baseMap);
+        if (typeof sketchMap !== 'undefined' && sketchMap) g.sketchMbr.addTo(sketchMap);
+    }
+}
 
 // Compute GMDA results from already-generated generalized base maps (allGenBaseMap)
 async function computeGMDAFromAllGenBaseMap() {
@@ -147,6 +197,7 @@ async function computeGMDAFromAllGenBaseMap() {
     }
 
     $('#loading-spinner').show()
+    mbrLayersPerSketchmap.gmda = {};
     const baseUrl = getServiceUrl('gmda');
 
     for (const sketchmap of Object.keys(allGenBaseMap)) {
@@ -174,10 +225,17 @@ async function computeGMDAFromAllGenBaseMap() {
             genResultArray[sketchmap].AngAcc = response.AngAcc;
             genResultArray[sketchmap].nTL = response.nTL;
             genResultArray[sketchmap].nDL = response.nDL;
+            // 8-point MBR of the used landmarks, kept per sketchmap
+            // so it can be redrawn when the user switches the sketchmap
+            mbrLayersPerSketchmap.gmda[sketchmap] = {
+                baseMbr: response.basemapMBR,
+                sketchMbr: response.sketchmapMBR
+            };
         } catch (e) {
             console.error('GMDA failed for', sketchmap, e);
         }
     }
+    if (typeof sketchMaptitle !== 'undefined' && sketchMaptitle) renderMbrLayers(sketchMaptitle);
     $('#loading-spinner').hide();
     showSummaryPanel();
     populateGMDAResults();
@@ -303,6 +361,7 @@ async function bdrLandmarksFromAllGenBaseMap() {
     }
     
     $('#loading-spinner').show()
+    mbrLayersPerSketchmap.bdr = {};
     const baseUrl = getServiceUrl('bdr');
 
     for (const sketchmap of Object.keys(allGenBaseMap)) {
@@ -328,10 +387,17 @@ async function bdrLandmarksFromAllGenBaseMap() {
             genResultArray[sketchmap].Land_theta = response.theta;
             genResultArray[sketchmap].Land_alpha1 = response.alpha1;
             genResultArray[sketchmap].Land_alpha2 = response.alpha2;
+            // 8-point MBR of the used landmarks, kept per sketchmap
+            // so it can be redrawn when the user switches the sketchmap
+            mbrLayersPerSketchmap.bdr[sketchmap] = {
+                baseMbr: response.basemapMBR,
+                sketchMbr: response.sketchmapMBR
+            };
         } catch (e) {
             console.error('BDR failed for', sketchmap, e);
         }
     }
+    if (typeof sketchMaptitle !== 'undefined' && sketchMaptitle) renderMbrLayers(sketchMaptitle);
     $('#loading-spinner').hide();
     showSummaryPanel();
     populateBDRResults();

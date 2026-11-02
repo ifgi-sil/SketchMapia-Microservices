@@ -82,6 +82,19 @@ def junctions_detector(data, map_type):
         dict_mbr[junc] = compute_mbr_points(point)
     return junctions, dict_mbr
 
+def mbr_features(role, ref, group_id, pts):
+    """The 8-point MBR as one polygon + its 8 numbered points (clockwise from top-left)."""
+    common = {'role': role, 'group_id': group_id, 'ref': ref}
+    ring = [list(pt) for pt in pts] + [list(pts[0])]
+    feats = [{'type': 'Feature',
+              'geometry': {'type': 'Polygon', 'coordinates': [ring]},
+              'properties': dict(common, kind='mbr')}]
+    for i, pt in enumerate(pts, start=1):
+        feats.append({'type': 'Feature',
+                      'geometry': {'type': 'Point', 'coordinates': list(pt)},
+                      'properties': dict(common, kind='mbr_point', index=i)})
+    return feats
+
 
 def compute_LandmarksBDR(basemap_geojson, sketchmap_geojson):
     """
@@ -93,6 +106,7 @@ def compute_LandmarksBDR(basemap_geojson, sketchmap_geojson):
     dict_align = {} # stores the (base map id, sketch map id) pairs
     X = [] # coordinates of points on the base map
     Y = [] # coordinates of points on the sketch map
+    used_pairs = []  # (base id, sketch id, base MBR points, sketch MBR points) of the landmarks used in the fit
 
     # Sketch map: extraction of the drawn landmarks
     for j in range(len(sketchmap_geojson["features"])): # fills skm_data
@@ -127,6 +141,8 @@ def compute_LandmarksBDR(basemap_geojson, sketchmap_geojson):
                     skm_coords_mbr = compute_mbr_points(skm_geom)
                     X.extend(bsm_coords_mbr)
                     Y.extend(skm_coords_mbr)
+                    # keeping the 8 MBR points, so the frontend can draw exactly what was used in the fit
+                    used_pairs.append((id_i, skm_id, bsm_coords_mbr, skm_coords_mbr))
 
     # Estimation of the transformation parameters
     X, Y = np.array(X), np.array(Y)
@@ -143,13 +159,29 @@ def compute_LandmarksBDR(basemap_geojson, sketchmap_geojson):
     phi = tform.scale
     theta = np.degrees(tform.rotation)
     alpha1, alpha2 = tform.translation 
+
+    # Layers shown in the frontend: the 8-point MBR (the points BDR really works with)
+    # of every landmark that actually entered the fit
+    layer_group, base_mbr_feats, sketch_mbr_feats, seen_sketch = {}, [], [], set()
+    for b_id, s_id, b_mbr, s_mbr in used_pairs:
+        # a sketch landmark and the base landmark(s) aligned to it share one group id (= one colour)
+        gid = layer_group.setdefault(s_id, len(layer_group) + 1)
+        # 8-point MBR of the base landmark
+        base_mbr_feats += mbr_features('base', str(b_id), gid, b_mbr)
+        # the sketch landmark is drawn only once, even if several base landmarks are aligned to it
+        if s_id not in seen_sketch:
+            seen_sketch.add(s_id)
+            sketch_mbr_feats += mbr_features('sketch', 'S' + str(s_id), gid, s_mbr)
+
     return {
         'r': round(r, 4),
         'DI': round(DI, 4),
         'phi': round(phi, 4),
         'theta': round(theta, 4),
         'alpha1': round(alpha1, 4),
-        'alpha2': round(alpha2, 4)
+        'alpha2': round(alpha2, 4),
+        'basemapMBR': {'type': 'FeatureCollection', 'features': base_mbr_feats},
+        'sketchmapMBR': {'type': 'FeatureCollection', 'features': sketch_mbr_feats},
     }
 
 
