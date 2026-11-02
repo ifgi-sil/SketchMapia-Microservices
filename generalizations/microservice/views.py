@@ -18,15 +18,9 @@ import pandas as pd
 # Stamp per-feature on_route / street_position flags for the weighted
 # measurement scheme. See shared/feature_flags.py for the rules.
 try:
-    from shared.feature_flags import (
-        annotate_route_flags,
-        annotate_generalization_weights,
-    )
-    from shared.measurement_weights import get_weights
+    from shared.feature_flags import annotate_route_flags
 except Exception:  # pragma: no cover - optional until wired in Dockerfiles
     annotate_route_flags = None
-    annotate_generalization_weights = None
-    get_weights = None
 
 
 
@@ -1706,35 +1700,11 @@ def spatial_transformation():
     # Weighted-measurement-scheme flags: on_route for every feature,
     # street_position (end/middle) for every street. Downstream scoring
     # (completeness, generalization) reads these off properties.
-    base_on_route = {}
     if annotate_route_flags is not None:
         try:
             annotate_route_flags(combined_feature_collection)
         except Exception as exc:
             print("annotate_route_flags failed:", exc)
-
-        # Separately stamp on_route on the raw base map so junction/roundabout
-        # aggregate weights can resolve on-route via BaseAlign members
-        # (any member on-route -> aggregate on-route, per supervisor).
-        try:
-            annotate_route_flags(data_ip)
-            for feat in data_ip.get("features", []):
-                props = feat.get("properties") or {}
-                bid = props.get("id")
-                if bid is not None:
-                    base_on_route[bid] = bool(props.get("on_route"))
-        except Exception as exc:
-            print("annotate_route_flags on base map failed:", exc)
-
-    if annotate_generalization_weights is not None and get_weights is not None:
-        try:
-            annotate_generalization_weights(
-                combined_feature_collection,
-                get_weights(),
-                base_on_route=base_on_route,
-            )
-        except Exception as exc:
-            print("annotate_generalization_weights failed:", exc)
 
     outputpath =  os.path.join(USER_PROJ_DIR,"generalizedoutputMap"+".json")
     if os.path.exists(outputpath):
