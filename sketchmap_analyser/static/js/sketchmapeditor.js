@@ -20,6 +20,13 @@ var linearOrderingActive = false;
 var linearOrdering = new L.LayerGroup();
 var layerGroup_junctions = new L.LayerGroup();
 var layerGroup_junctions_sm = new L.LayerGroup();
+// Overlays that visualize the weighted-scheme flags stamped on the
+// generalized basemap (on_route, street_position). Populated by
+// generalizedMapExtract in project.js; toggled via the Layer Control.
+var layerGroupOnRoute = new L.LayerGroup();
+var layerGroupStreetPos = new L.LayerGroup();
+var allOnRouteLayer = {};
+var allStreetPosLayer = {};
 var baseMap;
 var baseMaptitle;
 var drawnItems;
@@ -121,6 +128,8 @@ function renderImageFile(file, location) {
         drawnItems = new L.geoJson();
         layerGroupBasemap.addTo(baseMap);
         layerGroupBasemapGen.addTo(baseMap);
+        layerGroupOnRoute.addTo(baseMap);
+        layerGroupStreetPos.addTo(baseMap);
         drawnItems.addTo(layerGroupBasemap);
         //layerGroup_junctions.addTo(baseMap);
 
@@ -130,6 +139,8 @@ function renderImageFile(file, location) {
         var layerControl = new L.Control.Layers(null, {
             'Base Map': layerGroupBasemap,
             'Generalized Map': layerGroupBasemapGen,
+            'On-route Features': layerGroupOnRoute,
+            'Street Position': layerGroupStreetPos,
             'Linear Ordering' : linearOrdering,
             'Junctions': layerGroup_junctions
         }).addTo(baseMap);
@@ -1107,6 +1118,14 @@ drawnItems.eachLayer(function(blayer){
             layerGroupBasemapGen.clearLayers();
             genbasemap = allGenBaseMap[sketchMaptitle].addTo(layerGroupBasemapGen);
             GenStyleLayers(genbasemap);
+            layerGroupOnRoute.clearLayers();
+            layerGroupStreetPos.clearLayers();
+            if (allOnRouteLayer[sketchMaptitle] != null) {
+                allOnRouteLayer[sketchMaptitle].addTo(layerGroupOnRoute);
+            }
+            if (allStreetPosLayer[sketchMaptitle] != null) {
+                allStreetPosLayer[sketchMaptitle].addTo(layerGroupStreetPos);
+            }
          }
         }
         else{

@@ -854,6 +854,7 @@ function generalizedMapExtract(index,currentsketchMap,alignmentArraySingleMap,re
  var junctionmergecount = 0;
  var roundaboutcount = 0;
  var multibuildingscountMissing = 0;
+ var weightedGenSum = 0;
 
  multiOmiMergeids[currentsketchMap] = [];
  roundaboutids[currentsketchMap] = [];
@@ -883,6 +884,8 @@ function generalizedMapExtract(index,currentsketchMap,alignmentArraySingleMap,re
   }
   }
                  $.each(wholeMapProc.features, function(i, item) {
+
+                   weightedGenSum += Number(item.properties.gen_weight) || 0;
 
                    if(item.properties.Missingmultibuilding != null ) {
                     multibuildingscountMissing = item.properties.Missingmultibuilding;
@@ -980,8 +983,51 @@ function generalizedMapExtract(index,currentsketchMap,alignmentArraySingleMap,re
                 GenStyleLayers(GenBaseMap);
                 Genhoverfunction(allOriginalSketchMaps[currentsketchMap],GenBaseMap);
 
+                // On-route overlay: show only features with on_route === true,
+                // highlighted so the current adjacency classification is easy
+                // to inspect against the base map.
+                var onRouteLayer = L.geoJSON(baseMapProc, {
+                    filter: function (feature) {
+                        return (feature.properties || {}).on_route === true;
+                    },
+                    style: function (feature) {
+                        return (feature.geometry && feature.geometry.type === 'LineString')
+                            ? { color: '#e6194b', weight: 4, opacity: 0.9 }
+                            : { color: '#e6194b', weight: 2, fillColor: '#e6194b',
+                                fillOpacity: 0.35 };
+                    },
+                    pointToLayer: function (feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 6, color: '#e6194b', fillColor: '#e6194b',
+                            fillOpacity: 0.6
+                        });
+                    }
+                });
+                allOnRouteLayer[currentsketchMap] = onRouteLayer;
+
+                // Street-position overlay: colour streets by end vs middle so
+                // the connectivity-based classification can be eyeballed.
+                var streetPosLayer = L.geoJSON(baseMapProc, {
+                    filter: function (feature) {
+                        return feature.geometry && feature.geometry.type === 'LineString';
+                    },
+                    style: function (feature) {
+                        var pos = (feature.properties || {}).street_position;
+                        if (pos === 'middle') {
+                            return { color: '#3f8edc', weight: 4, opacity: 0.9 };   // blue
+                        }
+                        return { color: '#f58231', weight: 4, opacity: 0.9,         // orange
+                                 dashArray: '4 4' };                                // dashed = end
+                    }
+                });
+                allStreetPosLayer[currentsketchMap] = streetPosLayer;
+
                 if (currentsketchMap == sketchMaptitle) {
                     allGenBaseMap[sketchMaptitle].addTo(layerGroupBasemapGen);
+                    layerGroupOnRoute.clearLayers();
+                    layerGroupStreetPos.clearLayers();
+                    allOnRouteLayer[sketchMaptitle].addTo(layerGroupOnRoute);
+                    allStreetPosLayer[sketchMaptitle].addTo(layerGroupStreetPos);
                 }
 
                 if (currentsketchMap == sketchMaptitle) {
@@ -1004,6 +1050,7 @@ function generalizedMapExtract(index,currentsketchMap,alignmentArraySingleMap,re
             genResultArray[currentsketchMap].totalGenStreets = parseInt(omissionmerge) + parseInt(multiOmiMergeCount)+ + parseInt(junctionmergecount) + parseInt(roundaboutcount) + parseInt(abstExiStreetscount);
             genResultArray[currentsketchMap].totalGenBuildings = parseInt(amalgamation) + parseInt(collapse) + parseInt(abstExiBuildingsscount);
             genResultArray[currentsketchMap].overallGen =  genResultArray[currentsketchMap].totalGenStreets +  genResultArray[currentsketchMap].totalGenBuildings ;
+            genResultArray[currentsketchMap].overallGenWeighted = weightedGenSum;
              return {generalizedbasemap : GenBaseMap, generalizationresult : genResultArray}
 
  }
@@ -1224,10 +1271,24 @@ function GenStyleLayers(generalizedmap) {
 
 
 
+function compWeightedOn(){
+    var el = document.getElementById('chkCompWeighted');
+    return !!(el && el.checked);
+}
+function genWeightedOn(){
+    var el = document.getElementById('chkGenWeighted');
+    return !!(el && el.checked);
+}
+
 function setResults_in_output_div(index,resp){
+       var cw = compWeightedOn();
+       var gw = genWeightedOn();
+       var gen = genResultArray[resp.sketchMapID];
+       var streetComp = ((resp.totalSketchedStreets+gen.abstExiStreets)/(resp.toal_mm_streets +gen.abstExiStreets)*100).toFixed(2);
+       var lmComp = ((resp.totalSketchedLandmarks+ gen.absExiBuildings)/(resp.total_mm_landmarks+ gen.absExiBuildings)*100).toFixed(2);
        cells[index][0].innerHTML = resp.sketchMapID;
-       cells[index][2].innerHTML = genResultArray[resp.sketchMapID].overallGen;
-       cells[index][1].innerHTML = ((resp.totalSketchedStreets+genResultArray[resp.sketchMapID].abstExiStreets)/(resp.toal_mm_streets +genResultArray[resp.sketchMapID].abstExiStreets)*100).toFixed(2) + "   " + ((resp.totalSketchedLandmarks+ genResultArray[resp.sketchMapID].absExiBuildings)/(resp.total_mm_landmarks+ genResultArray[resp.sketchMapID].absExiBuildings)*100).toFixed(2);
+       cells[index][2].innerHTML = gen.overallGen + (gw ? " (W: " + gen.overallGenWeighted + ")" : "");
+       cells[index][1].innerHTML = streetComp + "   " + lmComp + (cw ? " (W: " + (resp.streetWeightedCompleteness != null ? resp.streetWeightedCompleteness : "-") + "  " + (resp.landmarkWeightedCompleteness != null ? resp.landmarkWeightedCompleteness : "-") + ")" : "");
        cells[index][3].innerHTML = resp.precision + "    " + resp.recall;
 
 }
@@ -1467,8 +1528,10 @@ GeneralizationCSV.push("Sketch Map , BaseId , SketchId , GenId , Generalization 
 
 
 
+  var _cw = compWeightedOn();
+  var _gw = genWeightedOn();
   OverallSummaryCsv.push(
-    "Base Map,Sketch Maps,Generalization,Completeness_Streets(%),Completeness_Buildings(%),QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering,GMDA_Buildings_CanOrg,GMDA_Buildings_CanAcc, GMDA_Buildings_ScaBias,GMDA_Buildings_DistAcc,GMDA_Buildings_RotBias,GMDA_Buildings_AngAcc,GMDA_Junctions_CanOrg,GMDA_Junctions_CanAcc, GMDA_Junctions_ScaBias,GMDA_Junctions_DistAcc,GMDA_Junctions_RotBias,GMDA_Junctions_AngAcc,Buildings_Correlation,Buildings_DistortionIndex,Buildings_ScaleFactor,Buildings_Rotation,Buildings_X-Shift,Buildings_Y-Shift,Junctions_Correlation,Junctions_DistortionIndex,Junctions_ScaleFactor,Junctions_Rotation,Junctions_X-Shift,Junctions_Y-Shift"
+    "Base Map,Sketch Maps,Generalization," + (_gw ? "Generalization_Weighted," : "") + "Completeness_Streets(%),Completeness_Buildings(%)," + (_cw ? "Completeness_Streets_Weighted(%),Completeness_Buildings_Weighted(%),Completeness_Overall_Weighted(%)," : "") + "QualitativeAccuracy_Recall,QualitativeAccuracy_Precision,Generalization_OmissionMerge,Generalization_OmissionMerge(many-many),Generalization_Street_AbstractionToShowExistence,Generalization_JuctionMerge,Generalization_RoundaboutCollapse,Generalization_Amalgamation,Generalization_Collapse,Generalization_Building_AbstractionToShowExistence,QualitativeAccuracy_BuildingTopology(RCC8),QualitativeAccuracy_StreetBuildingTopology(DE9IM),QualitativeAccuracy_StreetsOrientation(OPRA),QualitativeAccuracy_StreetsConnectedness,QualitativeAccuracy_BuildingRoute_LeftRight,QualitativeAccuracy_BuildingRoute_LinearOrdering,GMDA_Buildings_CanOrg,GMDA_Buildings_CanAcc, GMDA_Buildings_ScaBias,GMDA_Buildings_DistAcc,GMDA_Buildings_RotBias,GMDA_Buildings_AngAcc,GMDA_Junctions_CanOrg,GMDA_Junctions_CanAcc, GMDA_Junctions_ScaBias,GMDA_Junctions_DistAcc,GMDA_Junctions_RotBias,GMDA_Junctions_AngAcc,Buildings_Correlation,Buildings_DistortionIndex,Buildings_ScaleFactor,Buildings_Rotation,Buildings_X-Shift,Buildings_Y-Shift,Junctions_Correlation,Junctions_DistortionIndex,Junctions_ScaleFactor,Junctions_Rotation,Junctions_X-Shift,Junctions_Y-Shift"
 );
 
 for (var i in Object.keys(genResultArray)) {
@@ -1496,8 +1559,10 @@ var precision = qa ? qa.precision : "";
         baseMaptitle + "," +
         sketchmap + "," +
         genResultArray[sketchmap].overallGen + "," +
+        (_gw ? (genResultArray[sketchmap].overallGenWeighted + ",") : "") +
         streetCompleteness.toFixed(2) + "," +
         landmarkCompleteness.toFixed(2) + "," +
+        (_cw ? ((comp.streetWeightedCompleteness != null ? comp.streetWeightedCompleteness : "") + "," + (comp.landmarkWeightedCompleteness != null ? comp.landmarkWeightedCompleteness : "") + "," + (comp.overallWeightedCompleteness != null ? comp.overallWeightedCompleteness : "") + ",") : "") +
         recall + "," +
         precision+ "," +
         genResultArray[sketchmap].om + "," +

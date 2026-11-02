@@ -15,7 +15,8 @@
       "OmissionMerge":                  1,
       "JunctionMerge":                  2,
       "RoundaboutCollapse":             2,
-      "AbstractionToExistence_street":  2
+      "AbstractionToExistence_street":  2,
+      "Multi-MultiOmissionMerge":       2
     }
   }
 }
